@@ -1,0 +1,6 @@
+{
+  "name": "Nyxdripstore",
+  "description": "Premium dark streetwear fashion accessories, Y2K chrome pendants, gothic bracelets, cyber chains, and handcrafted rings.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
