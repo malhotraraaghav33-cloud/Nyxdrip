@@ -1,0 +1,25 @@
+# Supabase Edge Functions Configuration
+
+[functions.get-payment-config]
+verify_jwt = false
+
+[functions.create-razorpay-order]
+verify_jwt = true
+
+[functions.verify-razorpay-payment]
+verify_jwt = true
+
+[functions.razorpay-webhook]
+verify_jwt = false
+
+[functions.cancel-payment]
+verify_jwt = true
+
+[functions.create-paypal-order]
+verify_jwt = true
+
+[functions.capture-paypal-order]
+verify_jwt = true
+
+[functions.paypal-webhook]
+verify_jwt = false

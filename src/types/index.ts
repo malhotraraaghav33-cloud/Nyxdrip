@@ -4,21 +4,22 @@ export interface Product {
   name: string;
   price: number;
   originalPrice?: number;
-  category: 'Pendants' | 'Bracelets' | 'Chains' | 'Rings' | 'Wallets' | 'Accessories';
+  priceIsPlaceholder?: boolean;
+  category: 'Necklaces' | 'Pendants' | 'Bracelets' | 'Studs / Earrings' | 'Wallets' | 'Caps' | string;
   description: string;
   images: string[];
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviewCount?: number;
   stock: number;
-  tags: string[];
+  tags?: string[];
   badge?: 'NEW' | 'BESTSELLER' | 'LIMITED' | null;
-  style: 'Gothic' | 'Y2K' | 'Cyber' | 'Industrial' | 'Minimalist';
-  color: 'Silver' | 'Obsidian' | 'Chrome' | 'Gunmetal';
-  materials: string;
-  careInstructions: string;
+  style?: string;
+  color?: string;
+  materials?: string;
+  careInstructions?: string;
   variants?: {
-    name: string; // e.g. "Length" or "Ring Size"
-    options: string[]; // e.g. ["50cm", "60cm"] or ["US 7", "US 8", "US 9", "US 10"]
+    name: string;
+    options: string[];
   };
   isNewArrival?: boolean;
   isBestSeller?: boolean;
@@ -42,7 +43,7 @@ export interface Coupon {
   minOrderAmount?: number;
 }
 
-export type OrderStatus = 'Pending' | 'Processing' | 'Paid' | 'Failed' | 'Cancelled';
+export type OrderStatus = 'Pending' | 'Processing' | 'Paid' | 'Failed' | 'Cancelled' | 'Shipped' | 'Delivered';
 
 export interface CustomerInfo {
   email: string;

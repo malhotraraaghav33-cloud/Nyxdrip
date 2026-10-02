@@ -67,6 +67,56 @@
   animation: metallic-sweep 6s ease-in-out infinite;
 }
 
+/* Hero background video responsive treatment - clear full video presentation */
+.hero-video-media {
+  object-fit: cover;
+  transform: scale(1.02);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Desktop (>=1024px): Crisp full video, high definition, balanced contrast */
+@media (min-width: 1024px) {
+  .hero-video-media {
+    object-position: center 38%;
+    filter: brightness(0.80) contrast(1.04) saturate(0.95);
+    opacity: 0.72;
+  }
+}
+
+/* Tablet (768px - 1023px, portrait & landscape): Balanced clarity */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hero-video-media {
+    object-position: center 40%;
+    filter: brightness(0.78) contrast(1.04) saturate(0.95);
+    opacity: 0.65;
+  }
+}
+
+/* Mobile (<768px): Clear video with comfortable contrast behind headline */
+@media (max-width: 767px) {
+  .hero-video-media {
+    object-position: center 40%;
+    filter: brightness(0.74) contrast(1.02) saturate(0.95);
+    opacity: 0.58;
+  }
+}
+
+/* Soft loop breathing overlay: gently softens any loop transition seam without heavy JS */
+@keyframes hero-loop-soften {
+  0%, 100% {
+    opacity: 0.90;
+  }
+  50% {
+    opacity: 0.82;
+  }
+}
+
+.animate-hero-loop-soften {
+  animation: hero-loop-soften 8s ease-in-out infinite;
+}
+
 /* Subtle cart pulse animation */
 @keyframes cart-pulse {
   0% {
@@ -205,6 +255,36 @@
   .brand-statement-heading {
     font-size: clamp(2.4rem, 3.8vw, 3.6rem);
   }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1.02);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 4s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+.scale-225 {
+  transform: scale(2.25);
 }
 
 /* Respect reduced motion */

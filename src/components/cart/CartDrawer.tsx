@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
+import { X, Trash2, ArrowRight, ShieldCheck, Tag, Loader2, RefreshCw } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useNavigation } from '../../context/NavigationContext';
 import { QuantitySelector } from '../common/QuantitySelector';
@@ -23,6 +23,10 @@ export const CartDrawer: React.FC = () => {
     amountNeededForFreeShipping,
     freeShippingThreshold,
     addToCart,
+    isLoading,
+    error,
+    retry,
+    isSyncing,
   } = useCart();
 
   const { navigateTo } = useNavigation();
@@ -31,10 +35,10 @@ export const CartDrawer: React.FC = () => {
 
   if (!isCartOpen) return null;
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!couponInput.trim()) return;
-    const res = applyCoupon(couponInput);
+    const res = await applyCoupon(couponInput);
     if (!res.success) {
       setCouponError(res.message);
     } else {
@@ -105,7 +109,26 @@ export const CartDrawer: React.FC = () => {
 
           {/* Items Container */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-            {items.length === 0 ? (
+            {error && (
+              <div className="p-3 bg-red-950/40 border border-red-800/50 text-xs text-red-300 flex items-center justify-between gap-2">
+                <span>{error}</span>
+                <button
+                  type="button"
+                  onClick={() => retry()}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#00D9FF] hover:underline"
+                >
+                  <RefreshCw size={12} />
+                  <span>Retry</span>
+                </button>
+              </div>
+            )}
+
+            {isLoading && items.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center py-20">
+                <Loader2 size={26} className="animate-spin text-[#8B5CF6] mb-3" />
+                <p className="text-xs uppercase tracking-wider text-[#9A9AA3]">Synchronizing your bag...</p>
+              </div>
+            ) : items.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center py-16">
                 <div className="w-16 h-16 rounded-full border border-[#2A2A32] flex items-center justify-center text-[#9A9AA3] mb-4">
                   <Tag size={24} />

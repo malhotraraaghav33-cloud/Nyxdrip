@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, ArrowRight } from 'lucide-react';
 import { PRODUCTS } from '../../data/products';
 import { useNavigation } from '../../context/NavigationContext';
+import { useProducts } from '../../context/ProductContext';
 
 export const SearchModal: React.FC = () => {
   const { isSearchModalOpen, closeSearchModal, navigateTo } = useNavigation();
+  const { products } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,13 +31,13 @@ export const SearchModal: React.FC = () => {
   if (!isSearchModalOpen) return null;
 
   const filteredProducts = searchTerm.trim()
-    ? PRODUCTS.filter((p) => {
+    ? products.filter((p) => {
         const query = searchTerm.toLowerCase();
         return (
           p.name.toLowerCase().includes(query) ||
           p.category.toLowerCase().includes(query) ||
           p.description.toLowerCase().includes(query) ||
-          p.tags.some((t) => t.toLowerCase().includes(query))
+          (p.tags ? p.tags.some((t) => t.toLowerCase().includes(query)) : false)
         );
       }).slice(0, 6)
     : [];

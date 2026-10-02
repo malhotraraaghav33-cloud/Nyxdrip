@@ -10,6 +10,9 @@ interface MobileFilterDrawerProps {
   onFilterChange: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
   onResetFilters: () => void;
   productCount: number;
+  availableCategories?: string[];
+  availableStyles?: string[];
+  availableColors?: string[];
 }
 
 export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
@@ -19,6 +22,9 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
   onFilterChange,
   onResetFilters,
   productCount,
+  availableCategories,
+  availableStyles,
+  availableColors,
 }) => {
   if (!isOpen) return null;
 
@@ -51,6 +57,9 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
             onFilterChange={onFilterChange}
             onResetFilters={onResetFilters}
             productCount={productCount}
+            availableCategories={availableCategories}
+            availableStyles={availableStyles}
+            availableColors={availableColors}
           />
         </div>
 

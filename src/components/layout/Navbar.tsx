@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingBag, Heart, User, Menu, X } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X, Shield } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useNavigation, ViewType } from '../../context/NavigationContext';
+import { useAuth } from '../../context/AuthContext';
 import { AnnouncementBar } from './AnnouncementBar';
+import { AccountModal } from '../account/AccountModal';
 
 export const Navbar: React.FC = () => {
   const { itemCount, openCart, isCartPulsing } = useCart();
   const { wishlistCount } = useWishlist();
   const { currentView, navigateTo, openSearchModal } = useNavigation();
+  const { user, profile, isAdmin } = useAuth();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -139,13 +142,37 @@ export const Navbar: React.FC = () => {
                 )}
               </button>
 
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => handleNavClick('admin')}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/30 border border-[#8B5CF6]/40 text-[#8B5CF6] hover:text-white text-[11px] font-bold uppercase tracking-wider transition-colors"
+                >
+                  <Shield size={13} />
+                  <span>Admin</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setAccountModalOpen(true)}
-                className="p-1.5 sm:p-2 text-[#C7CBD3] hover:text-[#F5F5F7] transition-colors focus-visible:outline-none hidden md:inline-flex"
-                aria-label="Account profile"
+                className={`relative p-1.5 sm:p-2 transition-colors focus-visible:outline-none hidden md:inline-flex items-center gap-1.5 ${
+                  user
+                    ? 'text-[#F5F5F7] hover:text-[#00D9FF]'
+                    : 'text-[#C7CBD3] hover:text-[#8B5CF6]'
+                }`}
+                title={user ? `Signed in as ${user.email?.split('@')[0]}` : 'Sign In'}
+                aria-label={user ? 'Account profile' : 'Sign In'}
               >
-                <User size={18} />
+                {user ? (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-6 h-6 rounded-full bg-[#8B5CF6]/25 border border-[#8B5CF6] flex items-center justify-center text-[10px] font-bold text-[#8B5CF6]">
+                      {user.email ? user.email[0].toUpperCase() : 'U'}
+                    </div>
+                  </div>
+                ) : (
+                  <User size={18} />
+                )}
               </button>
 
               <button
@@ -236,60 +263,45 @@ export const Navbar: React.FC = () => {
                   setMobileMenuOpen(false);
                   setAccountModalOpen(true);
                 }}
-                className="flex items-center gap-3 py-2 text-sm text-[#9A9AA3] hover:text-white"
+                className="flex items-center justify-between py-2 text-sm text-[#9A9AA3] hover:text-white"
               >
-                <User size={18} />
-                <span>Account Profile</span>
+                <div className="flex items-center gap-3">
+                  <User size={18} />
+                  <span>{user ? `Account (${profile?.full_name?.split(' ')[0] || user.email?.split('@')[0]})` : 'Sign In'}</span>
+                </div>
+                {user ? (
+                  <span className="text-[10px] text-[#00D9FF] font-mono-numbers uppercase tracking-wider font-semibold">
+                    Member
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-[#8B5CF6] font-mono-numbers uppercase tracking-wider font-semibold">
+                    Sign In
+                  </span>
+                )}
               </button>
+
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigateTo('admin');
+                  }}
+                  className="flex items-center gap-3 py-2 text-sm text-[#8B5CF6] hover:text-white font-semibold"
+                >
+                  <Shield size={18} />
+                  <span>Admin Control Center</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Account Info Modal */}
-      {accountModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={() => setAccountModalOpen(false)}
-          />
-          <div className="relative bg-[#15151B] border border-[#2A2A32] p-6 max-w-md w-full shadow-2xl z-10">
-            <div className="flex items-center justify-between pb-4 border-b border-[#2A2A32]">
-              <h3 className="font-display text-lg font-bold text-[#F5F5F7]">NYX VIP PASS</h3>
-              <button
-                onClick={() => setAccountModalOpen(false)}
-                className="text-[#9A9AA3] hover:text-[#F5F5F7]"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="py-5 space-y-4">
-              <div className="p-3 bg-[#0A0A0D] border border-[#2A2A32]">
-                <p className="text-xs text-[#9A9AA3]">MEMBER STATUS</p>
-                <p className="text-sm font-semibold text-[#F5F5F7] tracking-wider mt-0.5">TIER 1 · SHADOW OPERATOR</p>
-              </div>
-              <p className="text-xs text-[#9A9AA3] leading-relaxed">
-                Unlock exclusive private drop access, member-only drops, order history tracking, and VIP coupons.
-              </p>
-              <div className="space-y-2">
-                <input
-                  type="email"
-                  placeholder="Enter email for VIP access"
-                  className="w-full bg-[#0A0A0D] border border-[#2A2A32] px-3.5 py-2.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/60 focus:outline-none focus:border-[#8B5CF6]"
-                  defaultValue="guest@nyxdrip.store"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setAccountModalOpen(false)}
-                className="w-full py-2.5 bg-[#8B5CF6] hover:bg-[#7c4def] text-white text-xs font-bold tracking-widest uppercase transition-colors"
-              >
-                Access My Orders
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Real Supabase-Connected Account Modal */}
+      <AccountModal
+        isOpen={accountModalOpen}
+        onClose={() => setAccountModalOpen(false)}
+      />
     </>
   );
 };

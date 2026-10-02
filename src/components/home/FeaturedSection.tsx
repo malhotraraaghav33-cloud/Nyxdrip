@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { PRODUCTS } from '../../data/products';
 import { ProductGrid } from '../product/ProductGrid';
 import { useNavigation } from '../../context/NavigationContext';
+import { useProducts } from '../../context/ProductContext';
 import { ScrollReveal } from '../common/ScrollReveal';
 
 export const FeaturedSection: React.FC = () => {
   const { navigateTo } = useNavigation();
+  const { products } = useProducts();
   const [activeTab, setActiveTab] = useState<'all' | 'bestsellers' | 'new'>('all');
 
-  const filteredProducts = PRODUCTS.filter((p) => {
+  const filteredProducts = products.filter((p) => {
     if (activeTab === 'bestsellers') return p.isBestSeller;
     if (activeTab === 'new') return p.isNewArrival;
     return true;
-  }).slice(0, 8);
+  });
+
+  const displayProducts = filteredProducts.length > 0
+    ? filteredProducts.slice(0, 8)
+    : products.slice(0, 8);
 
   return (
     <section className="py-20 bg-[#0A0A0D] border-b border-[#2A2A32]">
@@ -71,7 +76,7 @@ export const FeaturedSection: React.FC = () => {
 
         {/* Product Grid */}
         <ScrollReveal animation="scale-in" delay={100}>
-          <ProductGrid products={filteredProducts} columns={4} />
+          <ProductGrid products={displayProducts} columns={4} />
         </ScrollReveal>
 
         {/* Bottom CTA to view full shop */}
@@ -81,7 +86,7 @@ export const FeaturedSection: React.FC = () => {
             onClick={() => navigateTo('shop')}
             className="inline-flex items-center gap-2 px-8 py-3 bg-[#15151B] border border-[#2A2A32] hover:border-[#8B5CF6] text-[#F5F5F7] text-xs font-bold uppercase tracking-widest transition-colors"
           >
-            <span>EXPLORE ENTIRE CATALOG ({PRODUCTS.length} ITEMS)</span>
+            <span>EXPLORE ENTIRE CATALOG ({products.length} PIECES)</span>
             <ArrowRight size={14} />
           </button>
         </div>

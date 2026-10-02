@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
+import { Trash2, ArrowRight, ShieldCheck, Tag, Loader2, RefreshCw } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useNavigation } from '../../context/NavigationContext';
 import { QuantitySelector } from '../common/QuantitySelector';
@@ -22,16 +22,19 @@ export const CartPage: React.FC = () => {
     amountNeededForFreeShipping,
     freeShippingThreshold,
     addToCart,
+    isLoading,
+    error,
+    retry,
   } = useCart();
 
   const { navigateTo } = useNavigation();
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState('');
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!couponInput.trim()) return;
-    const res = applyCoupon(couponInput);
+    const res = await applyCoupon(couponInput);
     if (!res.success) {
       setCouponError(res.message);
     } else {
@@ -58,7 +61,29 @@ export const CartPage: React.FC = () => {
           </div>
         </ScrollReveal>
 
-        {items.length === 0 ? (
+        {error && (
+          <div className="mt-6 p-4 bg-red-950/40 border border-red-800/50 text-xs text-red-300 flex items-center justify-between gap-3">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => retry()}
+              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#00D9FF] hover:underline"
+            >
+              <RefreshCw size={13} />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+
+        {isLoading && items.length === 0 ? (
+          <div className="py-24 text-center border border-[#2A2A32] bg-[#15151B] mt-8 p-8 flex flex-col items-center justify-center animate-in fade-in duration-300">
+            <Loader2 size={32} className="animate-spin text-[#8B5CF6] mb-4" />
+            <h3 className="font-display text-base font-bold text-[#F5F5F7] uppercase tracking-wider">
+              Synchronizing Your Bag...
+            </h3>
+            <p className="text-xs text-[#9A9AA3] mt-2">Connecting with secure vault</p>
+          </div>
+        ) : items.length === 0 ? (
           <div className="py-24 text-center border border-[#2A2A32] bg-[#15151B] mt-8 p-8 animate-in fade-in duration-300">
             <h3 className="font-display text-lg font-bold text-[#F5F5F7]">
               YOUR BAG IS CURRENTLY EMPTY

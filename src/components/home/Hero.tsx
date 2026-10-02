@@ -1,27 +1,90 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, Sparkles, Video as VideoIcon } from 'lucide-react';
 import { useNavigation } from '../../context/NavigationContext';
 import { Magnetic } from '../common/Magnetic';
-import heroPoster from '../../assets/images/hero_gothic_accessories_1790341134351.jpg';
+import { getCustomHeroVideo, saveCustomHeroVideo, clearCustomHeroVideo } from '../../lib/videoStorage';
+
+const DEFAULT_VIDEO = '/assets/hero-product-video.mp4';
+const DEFAULT_POSTER = '/assets/hero-product-video-poster.jpg';
 
 export const Hero: React.FC = () => {
   const { navigateTo } = useNavigation();
+  const heroRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isDataSaver, setIsDataSaver] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
+  const [isHeroInView, setIsHeroInView] = useState(true);
   const [scrollY, setScrollY] = useState(0);
 
+  const [videoSrc, setVideoSrc] = useState<string>(DEFAULT_VIDEO);
+  const [isCustomVideo, setIsCustomVideo] = useState<boolean>(false);
+
+  // Load custom video if previously saved in IndexedDB
+  useEffect(() => {
+    getCustomHeroVideo().then((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        setVideoSrc(url);
+        setIsCustomVideo(true);
+      }
+    });
+  }, []);
+
+  const handleVideoFile = async (file: File) => {
+    if (!file || !file.type.startsWith('video/')) return;
+    await saveCustomHeroVideo(file);
+    const url = URL.createObjectURL(file);
+    setVideoSrc(url);
+    setIsCustomVideo(true);
+    setVideoLoaded(false);
+    setVideoError(false);
+  };
+
+  const handleResetVideo = async () => {
+    await clearCustomHeroVideo();
+    setVideoSrc(DEFAULT_VIDEO);
+    setIsCustomVideo(false);
+    setVideoLoaded(false);
+    setVideoError(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('video/')) {
+      handleVideoFile(file);
+    }
+  };
+
+  // 1. Reduced motion & Data-saver detection
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
 
-    const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    const listener = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+      if (e.matches && videoRef.current) {
+        videoRef.current.pause();
+      }
+    };
     mediaQuery.addEventListener('change', listener);
 
-    // Staggered reveal sequence on load
+    const nav = navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } };
+    if (
+      nav.connection?.saveData ||
+      nav.connection?.effectiveType === 'slow-2g' ||
+      nav.connection?.effectiveType === '2g'
+    ) {
+      setIsDataSaver(true);
+    }
+
     const timer = setTimeout(() => setIsRevealed(true), 120);
 
-    // Parallax on scroll
     const handleScroll = () => {
       setScrollY(window.scrollY);
     };
@@ -34,46 +97,167 @@ export const Hero: React.FC = () => {
     };
   }, []);
 
+  // 2. Explicitly enforce muted property in JS for reliable iOS/Safari autoplay
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.defaultMuted = true;
+      if (!prefersReducedMotion && !isDataSaver && isHeroInView && !document.hidden) {
+        videoRef.current.play().catch(() => {
+          // Autoplay blocked by browser policy; poster remains gracefully visible
+        });
+      }
+    }
+  }, [prefersReducedMotion, isDataSaver, isHeroInView, videoSrc]);
+
+  // 3. Pause video when hero is off-screen using IntersectionObserver to save CPU/battery
+  useEffect(() => {
+    const section = heroRef.current;
+    if (!section || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const inView = entry.isIntersecting;
+        setIsHeroInView(inView);
+        const video = videoRef.current;
+        if (!video) return;
+
+        if (inView && !prefersReducedMotion && !isDataSaver && !document.hidden) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.05 }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [prefersReducedMotion, isDataSaver]);
+
+  // 4. Pause video when browser tab is inactive / hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      if (document.hidden) {
+        video.pause();
+      } else if (isHeroInView && !prefersReducedMotion && !isDataSaver) {
+        video.play().catch(() => {});
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isHeroInView, prefersReducedMotion, isDataSaver]);
+
   return (
-    <section className="relative min-h-[85svh] sm:min-h-screen landscape:min-h-[90svh] landscape:sm:min-h-screen w-full max-w-[100vw] flex items-center justify-center overflow-x-hidden overflow-y-hidden bg-[#0A0A0D] pt-14 pb-10 sm:py-16 lg:py-20 landscape:py-8 landscape:sm:py-12">
-      {/* Background Media with Dark Overlay and subtle parallax */}
+    <section
+      ref={heroRef}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={handleDrop}
+      className="relative min-h-[85svh] sm:min-h-screen landscape:min-h-[90svh] landscape:sm:min-h-screen w-full max-w-[100vw] flex items-center justify-center overflow-hidden [isolation:isolate] bg-[#0A0A0D] pt-14 pb-10 sm:py-16 lg:py-20 landscape:py-8 landscape:sm:py-12"
+    >
+      {/* ====================================================================
+          LAYER 1: VIDEO / POSTER MEDIA LAYER (z-index 0)
+          Crisp, full-video background presentation with smooth playback
+          ==================================================================== */}
       <div
-        className="absolute inset-0 z-0 w-full h-full overflow-hidden will-change-transform pointer-events-none"
+        className="absolute inset-0 z-0 w-full h-full overflow-hidden pointer-events-none select-none"
         style={{
-          transform: !prefersReducedMotion ? `translate3d(0, ${scrollY * 0.12}px, 0)` : 'none',
+          transform: !prefersReducedMotion ? `translate3d(0, ${scrollY * 0.08}px, 0)` : 'none',
         }}
+        aria-hidden="true"
       >
-        {/* Poster image fallback always present as foundation */}
+        {/* Poster image fallback: Always present as base layer to prevent flash of raw/unloaded content */}
         <img
-          src={heroPoster}
-          alt="Nyxdripstore Dark Gothic Accessories"
-          className="w-full h-full object-cover object-center sm:object-[center_35%] filter brightness-40 transform scale-105"
+          src={DEFAULT_POSTER}
+          alt=""
+          fetchPriority="high"
+          className="hero-video-media absolute inset-0 w-full h-full"
         />
 
-        {/* Video layer if reduced motion is disabled */}
-        {!prefersReducedMotion && (
+        {/* Video element: Rendered only when motion is allowed and data saver is off */}
+        {!prefersReducedMotion && !isDataSaver && (
           <video
+            ref={videoRef}
+            key={videoSrc}
             autoPlay
             loop
             muted
             playsInline
-            preload="none"
-            poster={heroPoster}
+            preload="metadata"
+            poster={DEFAULT_POSTER}
+            controlsList="nodownload nofullscreen noremoteplayback"
+            disablePictureInPicture
+            aria-hidden="true"
+            tabIndex={-1}
             onLoadedData={() => setVideoLoaded(true)}
-            className={`absolute inset-0 w-full h-full object-cover object-center sm:object-[center_35%] mix-blend-screen opacity-20 pointer-events-none transition-opacity duration-1000 ${
-              videoLoaded ? 'opacity-25' : 'opacity-0'
+            onError={() => setVideoError(true)}
+            className={`hero-video-media absolute inset-0 w-full h-full transition-opacity duration-700 ${
+              videoLoaded && !videoError ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            <source src="/assets/hero-product-video.mp4" type="video/mp4" />
+            <source src={videoSrc} type="video/mp4" />
           </video>
         )}
-
-        {/* Measured Scrims & Atmospheric Vignette (Section 1.F / 80-15-5 balance) */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0D] via-[#0A0A0D]/75 to-[#0A0A0D]/85 pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#0A0A0D_85%)] pointer-events-none" />
       </div>
 
-      {/* Foreground Content with staggered reveals */}
+      {/* ====================================================================
+          LAYER 2: DARK OVERLAY & VIGNETTE LAYER (z-index 1)
+          Layered gradients in #0A0A0D: balances video clarity with text legibility
+          ==================================================================== */}
+      <div className="absolute inset-0 z-[1] pointer-events-none select-none" aria-hidden="true">
+        {/* Directional gradient: transparent in center, subtly darker at top/bottom for navbar & footer blend */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0D]/75 via-[#0A0A0D]/40 to-[#0A0A0D]/80 sm:from-[#0A0A0D]/65 sm:via-[#0A0A0D]/30 sm:to-[#0A0A0D]/75 animate-hero-loop-soften" />
+
+        {/* Soft radial vignette: transparent center to darkened edges */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(10,10,13,0.55)_100%)]" />
+
+        {/* Seamless bottom fade: blends 100% into #0A0A0D page background */}
+        <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-[#0A0A0D] via-[#0A0A0D]/80 to-transparent" />
+      </div>
+
+      {/* Discreet custom video upload control */}
+      <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-20 flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="video/mp4,video/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleVideoFile(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="text-[9px] sm:text-[10px] uppercase tracking-wider font-mono text-[#C7CBD3] bg-[#0A0A0D]/80 hover:bg-[#15151B] border border-[#2A2A32] px-2 sm:px-2.5 py-1 rounded transition-colors flex items-center gap-1.5 backdrop-blur-sm shadow-sm"
+          title="Upload or change background video (e.g. 1000110026_horizontal_no_sound.mp4)"
+        >
+          <VideoIcon size={12} className="text-[#00D9FF]" />
+          <span>{isCustomVideo ? 'Custom Video Active' : 'Change Video'}</span>
+        </button>
+        {isCustomVideo && (
+          <button
+            type="button"
+            onClick={handleResetVideo}
+            className="text-[9px] sm:text-[10px] uppercase tracking-wider font-mono text-[#9A9AA3] hover:text-red-400 bg-[#0A0A0D]/80 hover:bg-[#15151B] border border-[#2A2A32] px-2 py-1 rounded transition-colors backdrop-blur-sm"
+            title="Reset to default video"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+      {/* ====================================================================
+          LAYER 3: FOREGROUND HERO CONTENT (z-index 10)
+          Crisp, sharp, unfiltered, high-contrast brand typography & CTAs
+          ==================================================================== */}
       <div className="relative z-10 w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 text-center flex flex-col items-center justify-center py-4 sm:py-10 lg:py-14">
         {/* Small restrained kicker */}
         <div

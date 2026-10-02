@@ -6,6 +6,7 @@ import { ProductCard } from '../product/ProductCard';
 import { FilterSidebar } from './FilterSidebar';
 import { MobileFilterDrawer } from './MobileFilterDrawer';
 import { useNavigation } from '../../context/NavigationContext';
+import { useProducts } from '../../context/ProductContext';
 import { ScrollReveal } from '../common/ScrollReveal';
 import { Magnetic } from '../common/Magnetic';
 
@@ -24,6 +25,7 @@ const INITIAL_FILTERS: FilterState = {
 
 export const ShopView: React.FC = () => {
   const { params } = useNavigation();
+  const { products } = useProducts();
 
   const [filters, setFilters] = useState<FilterState>(() => ({
     ...INITIAL_FILTERS,
@@ -58,14 +60,14 @@ export const ShopView: React.FC = () => {
 
   // Filter products
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((product) => {
+    return products.filter((product) => {
       // Search query
       if (filters.searchQuery.trim()) {
         const query = filters.searchQuery.toLowerCase();
         const matchName = product.name.toLowerCase().includes(query);
         const matchCat = product.category.toLowerCase().includes(query);
         const matchDesc = product.description.toLowerCase().includes(query);
-        const matchTags = product.tags.some((t) => t.toLowerCase().includes(query));
+        const matchTags = product.tags ? product.tags.some((t) => t.toLowerCase().includes(query)) : false;
         if (!matchName && !matchCat && !matchDesc && !matchTags) return false;
       }
 
@@ -75,12 +77,12 @@ export const ShopView: React.FC = () => {
       }
 
       // Style
-      if (filters.style && product.style.toLowerCase() !== filters.style.toLowerCase()) {
+      if (filters.style && (!product.style || product.style.toLowerCase() !== filters.style.toLowerCase())) {
         return false;
       }
 
       // Color
-      if (filters.color && product.color.toLowerCase() !== filters.color.toLowerCase()) {
+      if (filters.color && (!product.color || product.color.toLowerCase() !== filters.color.toLowerCase())) {
         return false;
       }
 
@@ -95,7 +97,7 @@ export const ShopView: React.FC = () => {
       }
 
       // Min rating
-      if (filters.minRating > 0 && product.rating < filters.minRating) {
+      if (filters.minRating > 0 && ((product.rating ?? 0) < filters.minRating)) {
         return false;
       }
 
@@ -124,7 +126,7 @@ export const ShopView: React.FC = () => {
       case 'price-desc':
         return list.sort((a, b) => b.price - a.price);
       case 'popular':
-        return list.sort((a, b) => b.reviewCount - a.reviewCount);
+        return list.sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0));
       case 'featured':
       default:
         return list.sort((a, b) => (b.badge ? 1 : 0) - (a.badge ? 1 : 0));

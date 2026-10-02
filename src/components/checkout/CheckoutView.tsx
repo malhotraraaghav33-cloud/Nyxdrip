@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
-import { ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, Loader2, CreditCard, Smartphone, Building2, Wallet, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, Loader2, CreditCard, Smartphone, Building2, Wallet, Globe, MapPin, User, Mail, Lock, Phone } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useNavigation } from '../../context/NavigationContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { CustomerInfo, Order, OrderStatus } from '../../types';
 import { ScrollReveal } from '../common/ScrollReveal';
 import { Magnetic } from '../common/Magnetic';
+import { validateCartStock } from '../../services/inventoryService';
+import { createOrderInDatabase } from '../../services/orderService';
+import { fetchUserAddresses, saveUserAddress, UserAddress } from '../../services/addressService';
+import { AccountModal } from '../account/AccountModal';
 
 // ============================================================================
 // PAYMENT INTEGRATION INTERFACE CONTRACT
@@ -15,8 +21,25 @@ import { Magnetic } from '../common/Magnetic';
 // ============================================================================
 
 export const CheckoutView: React.FC = () => {
-  const { items, subtotal, discount, shipping, total, clearCart } = useCart();
+  const { items, subtotal, discount, shipping, total, clearCart, appliedCoupon } = useCart();
   const { navigateTo } = useNavigation();
+  const { user, profile, signIn, signUp, resetPassword, signInWithGoogle } = useAuth();
+  const { showToast } = useToast();
+
+  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
+  const [saveAddressToAccount, setSaveAddressToAccount] = useState(true);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  // Guest Checkout Authentication Form States
+  const [guestAuthMode, setGuestAuthMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestPassword, setGuestPassword] = useState('');
+  const [guestConfirmPassword, setGuestConfirmPassword] = useState('');
+  const [guestFullName, setGuestFullName] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [guestAuthLoading, setGuestAuthLoading] = useState(false);
+  const [guestAuthError, setGuestAuthError] = useState<string | null>(null);
+  const [guestAuthSuccess, setGuestAuthSuccess] = useState<string | null>(null);
 
   // Form Fields
   const [formData, setFormData] = useState<CustomerInfo>({
@@ -31,6 +54,38 @@ export const CheckoutView: React.FC = () => {
     pincode: '',
     country: 'India',
   });
+
+  // Pre-fill user data & fetch saved addresses
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        email: prev.email || user.email || '',
+        phone: prev.phone || profile?.phone || '',
+        firstName: prev.firstName || profile?.full_name?.split(' ')[0] || '',
+        lastName: prev.lastName || profile?.full_name?.split(' ').slice(1).join(' ') || '',
+      }));
+
+      fetchUserAddresses(user.id).then((addresses) => {
+        setSavedAddresses(addresses);
+        const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
+        if (defaultAddr) {
+          setFormData((prev) => ({
+            ...prev,
+            firstName: defaultAddr.full_name.split(' ')[0] || prev.firstName,
+            lastName: defaultAddr.full_name.split(' ').slice(1).join(' ') || prev.lastName,
+            phone: defaultAddr.phone || prev.phone,
+            address: defaultAddr.street_address,
+            apartment: defaultAddr.apartment || '',
+            city: defaultAddr.city,
+            state: defaultAddr.state,
+            pincode: defaultAddr.postal_code,
+            country: defaultAddr.country || 'India',
+          }));
+        }
+      });
+    }
+  }, [user, profile]);
 
   const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'express'>('standard');
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'netbanking' | 'wallets' | 'paypal'>('upi');
@@ -102,6 +157,11 @@ export const CheckoutView: React.FC = () => {
   const handleProcessOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!user) {
+      showToast('Sign In Required', 'Please sign in to place an order.', 'error');
+      return;
+    }
+
     if (!validateForm()) {
       window.scrollTo({ top: 150, behavior: 'smooth' });
       return;
@@ -110,8 +170,20 @@ export const CheckoutView: React.FC = () => {
     // Begin State Machine transition: Pending -> Processing
     setOrderState('Processing');
 
+    // 1. Centralized Inventory Validation check before authorizing transaction
+    const stockValidation = await validateCartStock(items);
+    if (!stockValidation.valid) {
+      setOrderState('Pending');
+      showToast(
+        'Inventory Allocation Notice',
+        `Insufficient stock for "${stockValidation.errorItem}". Only ${stockValidation.availableStock ?? 0} remain in the vault.`,
+        'error'
+      );
+      return;
+    }
+
     // Simulate real gateway handshake (Razorpay / Cashfree / PayPal)
-    setTimeout(() => {
+    setTimeout(async () => {
       if (simulateFailure) {
         setOrderState('Failed');
         return;
@@ -141,6 +213,36 @@ export const CheckoutView: React.FC = () => {
         }),
       };
 
+      // 2. Persist order & order items to Supabase Database
+      await createOrderInDatabase({
+        orderNumber: generatedOrderId,
+        userId: user?.id || null,
+        customer: formData,
+        items,
+        subtotal,
+        discount,
+        shipping: finalShipping,
+        total: finalTotal,
+        deliveryMethod,
+        paymentMethod,
+        couponCode: appliedCoupon?.code || null,
+      });
+
+      // 3. Save address to user's saved addresses in Supabase if requested
+      if (user && saveAddressToAccount) {
+        saveUserAddress(user.id, {
+          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
+          phone: formData.phone,
+          street_address: formData.address,
+          apartment: formData.apartment,
+          city: formData.city,
+          state: formData.state,
+          postal_code: formData.pincode,
+          country: formData.country,
+          is_default: savedAddresses.length === 0,
+        }).catch(() => {});
+      }
+
       try {
         localStorage.setItem(`order_${generatedOrderId}`, JSON.stringify(completedOrder));
         localStorage.setItem('latest_order_id', generatedOrderId);
@@ -152,9 +254,453 @@ export const CheckoutView: React.FC = () => {
 
       setTimeout(() => {
         navigateTo('order-confirmation', { orderId: generatedOrderId });
-      }, 1000);
-    }, 2200);
+      }, 800);
+    }, 1800);
   };
+
+  const handleGuestSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGuestAuthError(null);
+    setGuestAuthSuccess(null);
+
+    if (!guestEmail.trim() || !guestPassword) {
+      setGuestAuthError('Email and password are required.');
+      return;
+    }
+
+    setGuestAuthLoading(true);
+    const { error } = await signIn(guestEmail, guestPassword);
+    setGuestAuthLoading(false);
+    if (error) {
+      setGuestAuthError(error.message);
+    }
+  };
+
+  const handleGuestSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGuestAuthError(null);
+    setGuestAuthSuccess(null);
+
+    if (!guestFullName.trim()) {
+      setGuestAuthError('Full name is required.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      setGuestAuthError('Please enter a valid email address.');
+      return;
+    }
+    if (guestPassword.length < 6) {
+      setGuestAuthError('Password must contain at least 6 characters.');
+      return;
+    }
+    if (guestPassword !== guestConfirmPassword) {
+      setGuestAuthError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setGuestAuthLoading(true);
+    const { error } = await signUp(guestEmail, guestPassword, guestFullName, guestPhone);
+    setGuestAuthLoading(false);
+    if (error) {
+      setGuestAuthError(error.message);
+    } else {
+      setGuestAuthSuccess('Account created. Check your email for a verification link.');
+    }
+  };
+
+  const handleGuestForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGuestAuthError(null);
+    setGuestAuthSuccess(null);
+
+    if (!guestEmail.trim()) {
+      setGuestAuthError('Please enter your email address.');
+      return;
+    }
+
+    setGuestAuthLoading(true);
+    const { error } = await resetPassword(guestEmail);
+    setGuestAuthLoading(false);
+    if (error) {
+      setGuestAuthError(error.message);
+    } else {
+      setGuestAuthSuccess('Password reset link sent to your email.');
+    }
+  };
+
+  // If user is not authenticated, block checkout and display the polished Sign In gateway
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0D] text-[#F5F5F7] py-10 sm:py-16">
+        <div className="max-w-xl mx-auto px-4 sm:px-6">
+          {/* Breadcrumb back to cart */}
+          <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-[#9A9AA3] mb-8">
+            <button
+              type="button"
+              onClick={() => navigateTo('cart')}
+              className="flex items-center gap-1.5 hover:text-white transition-colors"
+            >
+              <ArrowLeft size={14} />
+              <span>Back to Bag</span>
+            </button>
+            <span>/</span>
+            <span className="text-[#8B5CF6] font-semibold">Secure Checkout</span>
+          </div>
+
+          <ScrollReveal animation="fade-up">
+            <div className="bg-[#15151B] border border-[#2A2A32] shadow-2xl p-6 sm:p-8 space-y-6">
+              {/* Header Badge */}
+              <div className="flex items-center gap-3 pb-4 border-b border-[#2A2A32]">
+                <div className="w-10 h-10 rounded-sm bg-[#0A0A0D] border border-[#2A2A32] flex items-center justify-center text-[#8B5CF6]">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-[0.25em] text-[#00D9FF] font-semibold block">
+                    GUEST CHECKOUT GATEWAY
+                  </span>
+                  <h2 className="font-display text-lg sm:text-xl font-bold uppercase tracking-wider text-white">
+                    Sign In Required for Checkout
+                  </h2>
+                </div>
+              </div>
+
+              <p className="text-xs text-[#9A9AA3] leading-relaxed">
+                An account is required to secure your hardware pieces, activate real-time courier dispatch tracking, and guarantee your order under the NYx Vault Protocol.
+              </p>
+
+              {/* Order bag summary chip */}
+              <div className="p-3.5 bg-[#0A0A0D] border border-[#2A2A32] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-2 overflow-hidden">
+                    {items.slice(0, 3).map((item, idx) => (
+                      <img
+                        key={idx}
+                        src={item.product.images[0]}
+                        alt={item.product.name}
+                        className="inline-block w-8 h-8 object-cover rounded-sm border border-[#2A2A32] bg-[#15151B]"
+                      />
+                    ))}
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-white block">
+                      {items.reduce((s, i) => s + i.quantity, 0)} Items In Your Bag
+                    </span>
+                    <span className="text-[11px] text-[#9A9AA3]">All items will be preserved</span>
+                  </div>
+                </div>
+                <span className="font-mono-numbers text-sm font-bold text-[#00D9FF]">
+                  ₹{finalTotal.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {/* Auth Mode Tabs */}
+              <div className="flex border-b border-[#2A2A32]">
+                <button
+                  type="button"
+                  onClick={() => { setGuestAuthMode('signin'); setGuestAuthError(null); setGuestAuthSuccess(null); }}
+                  className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
+                    guestAuthMode === 'signin'
+                      ? 'border-[#8B5CF6] text-white'
+                      : 'border-transparent text-[#9A9AA3] hover:text-[#F5F5F7]'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setGuestAuthMode('signup'); setGuestAuthError(null); setGuestAuthSuccess(null); }}
+                  className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
+                    guestAuthMode === 'signup'
+                      ? 'border-[#8B5CF6] text-white'
+                      : 'border-transparent text-[#9A9AA3] hover:text-[#F5F5F7]'
+                  }`}
+                >
+                  Create Account
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setGuestAuthMode('forgot'); setGuestAuthError(null); setGuestAuthSuccess(null); }}
+                  className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
+                    guestAuthMode === 'forgot'
+                      ? 'border-[#8B5CF6] text-white'
+                      : 'border-transparent text-[#9A9AA3] hover:text-[#F5F5F7]'
+                  }`}
+                >
+                  Forgot Password?
+                </button>
+              </div>
+
+              {/* Status messages */}
+              {guestAuthError && (
+                <div className="p-3 bg-red-950/40 border border-red-800/60 text-xs text-red-300 flex items-center gap-2">
+                  <AlertCircle size={14} className="shrink-0" />
+                  <span>{guestAuthError}</span>
+                </div>
+              )}
+              {guestAuthSuccess && (
+                <div className="p-3 bg-emerald-950/40 border border-emerald-800/60 text-xs text-emerald-300 flex items-center gap-2">
+                  <CheckCircle2 size={14} className="shrink-0" />
+                  <span>{guestAuthSuccess}</span>
+                </div>
+              )}
+
+              {/* 1. SIGN IN FORM */}
+              {guestAuthMode === 'signin' && (
+                <form onSubmit={handleGuestSignIn} className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-[#9A9AA3] mb-1">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail size={14} className="absolute left-3.5 top-3 text-[#9A9AA3]" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="operator@domain.com"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        className="w-full bg-[#0A0A0D] border border-[#2A2A32] pl-9 pr-3.5 py-2.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/50 focus:outline-none focus:border-[#8B5CF6]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-semibold uppercase text-[#9A9AA3]">
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setGuestAuthMode('forgot')}
+                        className="text-[10px] text-[#8B5CF6] hover:underline"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Lock size={14} className="absolute left-3.5 top-3 text-[#9A9AA3]" />
+                      <input
+                        type="password"
+                        required
+                        placeholder="••••••••••••"
+                        value={guestPassword}
+                        onChange={(e) => setGuestPassword(e.target.value)}
+                        className="w-full bg-[#0A0A0D] border border-[#2A2A32] pl-9 pr-3.5 py-2.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/50 focus:outline-none focus:border-[#8B5CF6]"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={guestAuthLoading}
+                    className="w-full py-3 bg-[#8B5CF6] hover:bg-[#7c4def] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    {guestAuthLoading && <Loader2 size={14} className="animate-spin" />}
+                    <span>Sign In & Continue to Checkout</span>
+                  </button>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={signInWithGoogle}
+                      className="w-full py-2.5 bg-[#0A0A0D] hover:bg-[#1a1a22] border border-[#2A2A32] text-xs font-semibold text-[#F5F5F7] transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        />
+                      </svg>
+                      <span>Continue with Google</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* 2. CREATE ACCOUNT FORM */}
+              {guestAuthMode === 'signup' && (
+                <form onSubmit={handleGuestSignUp} className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-[#9A9AA3] mb-1">
+                      Full Name *
+                    </label>
+                    <div className="relative">
+                      <User size={14} className="absolute left-3.5 top-3 text-[#9A9AA3]" />
+                      <input
+                        type="text"
+                        required
+                        placeholder="Jordan Vane"
+                        value={guestFullName}
+                        onChange={(e) => setGuestFullName(e.target.value)}
+                        className="w-full bg-[#0A0A0D] border border-[#2A2A32] pl-9 pr-3.5 py-2.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/50 focus:outline-none focus:border-[#8B5CF6]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-[#9A9AA3] mb-1">
+                      Email Address *
+                    </label>
+                    <div className="relative">
+                      <Mail size={14} className="absolute left-3.5 top-3 text-[#9A9AA3]" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="operator@domain.com"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        className="w-full bg-[#0A0A0D] border border-[#2A2A32] pl-9 pr-3.5 py-2.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/50 focus:outline-none focus:border-[#8B5CF6]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-[#9A9AA3] mb-1">
+                      Phone Number (For Delivery SMS)
+                    </label>
+                    <div className="relative">
+                      <Phone size={14} className="absolute left-3.5 top-3 text-[#9A9AA3]" />
+                      <input
+                        type="tel"
+                        placeholder="9876543210"
+                        value={guestPhone}
+                        onChange={(e) => setGuestPhone(e.target.value)}
+                        className="w-full bg-[#0A0A0D] border border-[#2A2A32] pl-9 pr-3.5 py-2.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/50 focus:outline-none focus:border-[#8B5CF6]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-[#9A9AA3] mb-1">
+                      Password * (min 6 characters)
+                    </label>
+                    <div className="relative">
+                      <Lock size={14} className="absolute left-3.5 top-3 text-[#9A9AA3]" />
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        placeholder="••••••••••••"
+                        value={guestPassword}
+                        onChange={(e) => setGuestPassword(e.target.value)}
+                        className="w-full bg-[#0A0A0D] border border-[#2A2A32] pl-9 pr-3.5 py-2.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/50 focus:outline-none focus:border-[#8B5CF6]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-[#9A9AA3] mb-1">
+                      Confirm Password *
+                    </label>
+                    <div className="relative">
+                      <Lock size={14} className="absolute left-3.5 top-3 text-[#9A9AA3]" />
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        placeholder="••••••••••••"
+                        value={guestConfirmPassword}
+                        onChange={(e) => setGuestConfirmPassword(e.target.value)}
+                        className="w-full bg-[#0A0A0D] border border-[#2A2A32] pl-9 pr-3.5 py-2.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/50 focus:outline-none focus:border-[#8B5CF6]"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={guestAuthLoading}
+                    className="w-full py-3 bg-[#8B5CF6] hover:bg-[#7c4def] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    {guestAuthLoading && <Loader2 size={14} className="animate-spin" />}
+                    <span>Create Account & Continue</span>
+                  </button>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={signInWithGoogle}
+                      className="w-full py-2.5 bg-[#0A0A0D] hover:bg-[#1a1a22] border border-[#2A2A32] text-xs font-semibold text-[#F5F5F7] transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        />
+                      </svg>
+                      <span>Continue with Google</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* 3. FORGOT PASSWORD FORM */}
+              {guestAuthMode === 'forgot' && (
+                <form onSubmit={handleGuestForgotPassword} className="space-y-4">
+                  <p className="text-xs text-[#9A9AA3] leading-relaxed">
+                    Enter your registered email address to receive password reset instructions.
+                  </p>
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase text-[#9A9AA3] mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="operator@domain.com"
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      className="w-full bg-[#0A0A0D] border border-[#2A2A32] px-3.5 py-2.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/50 focus:outline-none focus:border-[#8B5CF6]"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={guestAuthLoading}
+                    className="w-full py-3 bg-[#8B5CF6] hover:bg-[#7c4def] text-white text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                  >
+                    {guestAuthLoading && <Loader2 size={14} className="animate-spin" />}
+                    <span>Send Password Reset Link</span>
+                  </button>
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setGuestAuthMode('signin')}
+                      className="text-xs text-[#9A9AA3] hover:text-white"
+                    >
+                      ← Back to Sign In
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </ScrollReveal>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0 && orderState === 'Pending') {
     return (
@@ -232,7 +778,7 @@ export const CheckoutView: React.FC = () => {
                 TRANSACTION FAILED OR DECLINED
               </h3>
               <p className="text-xs text-[#9A9AA3] leading-relaxed">
-                The simulated bank or card issuer declined authorization. You can retry with another method or disable simulation.
+                The simulated bank or card issuer declined payment. You can retry with another method or disable simulation.
               </p>
               <div className="flex gap-3 pt-2">
                 <button
@@ -262,11 +808,23 @@ export const CheckoutView: React.FC = () => {
           <div className="lg:col-span-7 space-y-8">
             {/* Section 1: Contact Information */}
             <div className="p-6 bg-[#15151B] border border-[#2A2A32] space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#2A2A32]">
+              <div className="flex items-center justify-between pb-3 border-b border-[#2A2A32] flex-wrap gap-2">
                 <h3 className="font-display text-sm font-bold uppercase tracking-wider text-[#F5F5F7]">
                   1. Contact Information
                 </h3>
-                <span className="text-[11px] text-[#9A9AA3]">Required for order tracking</span>
+                {!user ? (
+                  <button
+                    type="button"
+                    onClick={() => setAuthModalOpen(true)}
+                    className="text-xs text-[#00D9FF] hover:underline font-semibold flex items-center gap-1"
+                  >
+                    <span>Already an operative? Sign In</span>
+                  </button>
+                ) : (
+                  <span className="text-[11px] text-[#8B5CF6] font-semibold">
+                    ✓ Authenticated: {profile?.full_name || user.email}
+                  </span>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -308,6 +866,46 @@ export const CheckoutView: React.FC = () => {
                 </h3>
                 <span className="text-[11px] text-[#9A9AA3]">Pan-India Delivery</span>
               </div>
+
+              {/* Saved Addresses quick-select for logged-in users */}
+              {user && savedAddresses.length > 0 && (
+                <div className="pb-3 border-b border-[#2A2A32] space-y-2">
+                  <span className="text-[11px] font-semibold text-[#8B5CF6] uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin size={13} />
+                    <span>Saved Cloud Addresses</span>
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {savedAddresses.map((addr) => (
+                      <button
+                        key={addr.id}
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            firstName: addr.full_name.split(' ')[0] || prev.firstName,
+                            lastName: addr.full_name.split(' ').slice(1).join(' ') || prev.lastName,
+                            phone: addr.phone || prev.phone,
+                            address: addr.street_address,
+                            apartment: addr.apartment || '',
+                            city: addr.city,
+                            state: addr.state,
+                            pincode: addr.postal_code,
+                            country: addr.country || 'India',
+                          }));
+                        }}
+                        className={`px-3 py-1.5 text-[11px] border transition-colors text-left ${
+                          formData.address === addr.street_address
+                            ? 'border-[#8B5CF6] bg-[#8B5CF6]/15 text-white'
+                            : 'border-[#2A2A32] bg-[#0A0A0D] text-[#9A9AA3] hover:border-[#C7CBD3]'
+                        }`}
+                      >
+                        <span className="font-semibold text-[#F5F5F7] block">{addr.full_name}</span>
+                        <span className="text-[10px] text-[#9A9AA3] truncate max-w-[200px] block">{addr.street_address}, {addr.city}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -415,6 +1013,22 @@ export const CheckoutView: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Save Address Checkbox for Authenticated Users */}
+              {user && (
+                <div className="pt-2 flex items-center gap-2 border-t border-[#2A2A32]/60">
+                  <input
+                    type="checkbox"
+                    id="saveAddressCheck"
+                    checked={saveAddressToAccount}
+                    onChange={(e) => setSaveAddressToAccount(e.target.checked)}
+                    className="accent-[#8B5CF6] w-4 h-4 bg-[#0A0A0D] border-[#2A2A32] rounded cursor-pointer"
+                  />
+                  <label htmlFor="saveAddressCheck" className="text-xs text-[#9A9AA3] cursor-pointer hover:text-[#F5F5F7]">
+                    Save this address to my encrypted cloud profile
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Section 3: Delivery Method */}

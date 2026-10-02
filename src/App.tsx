@@ -1,5 +1,7 @@
 import React from 'react';
 import { ToastProvider } from './context/ToastContext';
+import { AuthProvider } from './context/AuthContext';
+import { ProductProvider } from './context/ProductContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
@@ -27,6 +29,9 @@ import { OrderConfirmationView } from './components/checkout/OrderConfirmationVi
 import { WishlistView } from './components/wishlist/WishlistView';
 import { AboutView } from './components/about/AboutView';
 import { ContactView } from './components/contact/ContactView';
+import { AccountView } from './components/account/AccountView';
+import { VerifyEmailView } from './components/account/VerifyEmailView';
+import { AdminView } from './components/admin/AdminView';
 
 const AppContent: React.FC = () => {
   const { currentView } = useNavigation();
@@ -64,6 +69,9 @@ const AppContent: React.FC = () => {
           {currentView === 'wishlist' && <WishlistView />}
           {currentView === 'about' && <AboutView />}
           {currentView === 'contact' && <ContactView />}
+          {currentView === 'account' && <AccountView />}
+          {currentView === 'verify' && <VerifyEmailView />}
+          {currentView === 'admin' && <AdminView />}
         </RouteTransition>
       </main>
 
@@ -80,13 +88,17 @@ const AppContent: React.FC = () => {
 export default function App() {
   return (
     <ToastProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <NavigationProvider>
-            <AppContent />
-          </NavigationProvider>
-        </WishlistProvider>
-      </CartProvider>
+      <AuthProvider>
+        <ProductProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <NavigationProvider>
+                <AppContent />
+              </NavigationProvider>
+            </WishlistProvider>
+          </CartProvider>
+        </ProductProvider>
+      </AuthProvider>
     </ToastProvider>
   );
 }

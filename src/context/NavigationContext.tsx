@@ -9,7 +9,10 @@ export type ViewType =
   | 'order-confirmation' 
   | 'wishlist' 
   | 'about' 
-  | 'contact';
+  | 'contact'
+  | 'account'
+  | 'verify'
+  | 'admin';
 
 interface NavigationParams {
   productId?: string;
@@ -37,7 +40,22 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Parse hash route on initial load and popstate
   const parseHash = useCallback(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const hasVerifyParams = searchParams.has('token_hash') || (searchParams.get('type') === 'signup') || (searchParams.get('type') === 'email');
     const hash = window.location.hash.replace(/^#\/?/, '');
+
+    // Check for email verification indicators in query or hash
+    if (
+      hash.startsWith('verify') ||
+      hash.includes('type=signup') ||
+      hash.includes('type=email_confirmation') ||
+      hasVerifyParams
+    ) {
+      setCurrentView('verify');
+      setParams({});
+      return;
+    }
+
     if (!hash) {
       setCurrentView('home');
       setParams({});
@@ -47,7 +65,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const [route, ...rest] = hash.split('/');
     const identifier = rest.join('/');
 
-    if (route === 'shop') {
+    if (route === 'verify') {
+      setCurrentView('verify');
+    } else if (route === 'shop') {
       setCurrentView('shop');
       const urlParams = new URLSearchParams(window.location.search);
       setParams({
@@ -68,6 +88,10 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setCurrentView('about');
     } else if (route === 'contact') {
       setCurrentView('contact');
+    } else if (route === 'account' || route === 'reset-password') {
+      setCurrentView('account');
+    } else if (route === 'admin') {
+      setCurrentView('admin');
     } else if (route === 'order-confirmation') {
       setCurrentView('order-confirmation');
       setParams({ orderId: identifier });

@@ -1,18 +1,24 @@
 import React from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { PRODUCTS } from '../../data/products';
 import { useNavigation } from '../../context/NavigationContext';
 import { useCart } from '../../context/CartContext';
+import { useProducts } from '../../context/ProductContext';
 import { ScrollReveal } from '../common/ScrollReveal';
+import { getProductPrimaryImage, PRODUCT_PLACEHOLDER_IMAGE } from '../../lib/productImage';
 import heroImg from '../../assets/images/hero_gothic_accessories_1790341134351.jpg';
 
 export const NewDropSection: React.FC = () => {
   const { navigateTo } = useNavigation();
   const { addToCart, openCart } = useCart();
+  const { products } = useProducts();
 
-  // Curated flagship drop product
-  const heroDrop = PRODUCTS.find((p) => p.slug === 'chrome-cross-pendant') || PRODUCTS[0];
-  const sideDrops = PRODUCTS.filter((p) => p.isNewArrival).slice(0, 2);
+  // Curated flagship drop product from active catalog
+  const heroDrop = products.find((p) => p.slug === 'triple-cross-ch-necklace') || products[0];
+  const sideDrops = products.filter((p) => p.slug !== heroDrop?.slug).slice(0, 2);
+
+  if (!heroDrop) return null;
+
+  const isHeroPricePlaceholder = Boolean(heroDrop.priceIsPlaceholder || heroDrop.price === 0);
 
   return (
     <section className="py-20 sm:py-24 bg-[#0A0A0D] border-b border-[#2A2A32]">
@@ -48,9 +54,12 @@ export const NewDropSection: React.FC = () => {
               <div className="h-full bg-[#15151B] border border-[#2A2A32] flex flex-col justify-between overflow-hidden group">
                 <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#0A0A0D]">
                   <img
-                    src={heroImg}
-                    alt="The New Drop Campaign"
+                    src={getProductPrimaryImage(heroDrop)}
+                    alt={heroDrop.name}
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = PRODUCT_PLACEHOLDER_IMAGE;
+                    }}
                     className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute top-4 left-4">
@@ -63,7 +72,7 @@ export const NewDropSection: React.FC = () => {
                 <div className="p-6 sm:p-8 flex flex-col justify-between flex-1">
                   <div>
                     <p className="text-xs uppercase tracking-widest text-[#9A9AA3] font-mono-numbers">
-                      SERIES 04 · CYBER INDUSTRIAL
+                      SERIES 04 · HARDWARE ARCHIVE
                     </p>
                     <h3 className="font-display text-xl sm:text-2xl font-bold text-[#F5F5F7] mt-1.5">
                       {heroDrop.name}
@@ -75,13 +84,21 @@ export const NewDropSection: React.FC = () => {
 
                   <div className="mt-6 pt-6 border-t border-[#2A2A32] flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-baseline gap-2">
-                      <span className="font-mono-numbers text-xl font-bold text-[#F5F5F7]">
-                        ₹{heroDrop.price.toLocaleString('en-IN')}
-                      </span>
-                      {heroDrop.originalPrice && (
-                        <span className="font-mono-numbers text-sm text-[#9A9AA3] line-through">
-                          ₹{heroDrop.originalPrice.toLocaleString('en-IN')}
+                      {isHeroPricePlaceholder ? (
+                        <span className="font-mono-numbers text-lg sm:text-xl font-bold text-[#8B5CF6] uppercase tracking-wider">
+                          Price On Request
                         </span>
+                      ) : (
+                        <>
+                          <span className="font-mono-numbers text-xl font-bold text-[#F5F5F7]">
+                            ₹{heroDrop.price.toLocaleString('en-IN')}
+                          </span>
+                          {heroDrop.originalPrice && heroDrop.originalPrice > heroDrop.price && (
+                            <span className="font-mono-numbers text-sm text-[#9A9AA3] line-through">
+                              ₹{heroDrop.originalPrice.toLocaleString('en-IN')}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
 
@@ -112,47 +129,55 @@ export const NewDropSection: React.FC = () => {
 
           {/* Side Editorial Capsule Products */}
           <div className="lg:col-span-5 flex flex-col gap-6">
-            {sideDrops.map((drop, idx) => (
-              <ScrollReveal key={drop.id} animation="slide-left" delay={150 + idx * 100} className="flex-1">
-                <div
-                  onClick={() => navigateTo('product', { productId: drop.slug })}
-                  className="h-full bg-[#15151B] border border-[#2A2A32] hover:border-[#C7CBD3]/40 p-5 flex flex-col sm:flex-row gap-5 cursor-pointer group transition-all"
-                >
-                  <div className="w-full sm:w-36 h-40 bg-[#0A0A0D] overflow-hidden shrink-0">
-                    <img
-                      src={drop.images[0]}
-                      alt={drop.name}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 text-[10px] uppercase text-[#00D9FF] font-semibold tracking-wider">
-                        <span>{drop.badge || 'NEW RELEASE'}</span>
-                        <span aria-hidden="true">·</span>
-                        <span className="text-[#9A9AA3]">{drop.category}</span>
-                      </div>
-                      <h4 className="font-display text-sm font-bold text-[#F5F5F7] mt-1 group-hover:text-white transition-colors">
-                        {drop.name}
-                      </h4>
-                      <p className="text-xs text-[#9A9AA3] mt-2 line-clamp-2">
-                        {drop.description}
-                      </p>
-                    </div>
+            {sideDrops.map((drop, idx) => {
+              const isSidePricePlaceholder = Boolean(drop.priceIsPlaceholder || drop.price === 0);
+              const dropImg = getProductPrimaryImage(drop);
 
-                    <div className="mt-4 pt-3 border-t border-[#2A2A32] flex items-center justify-between">
-                      <span className="font-mono-numbers text-sm font-bold text-[#F5F5F7]">
-                        ₹{drop.price.toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-xs font-semibold text-[#C7CBD3] group-hover:text-[#8B5CF6] flex items-center gap-1 transition-colors">
-                        Explore <ArrowRight size={12} />
-                      </span>
+              return (
+                <ScrollReveal key={drop.id} animation="slide-left" delay={150 + idx * 100} className="flex-1">
+                  <div
+                    onClick={() => navigateTo('product', { productId: drop.slug })}
+                    className="h-full bg-[#15151B] border border-[#2A2A32] hover:border-[#C7CBD3]/40 p-5 flex flex-col sm:flex-row gap-5 cursor-pointer group transition-all"
+                  >
+                    <div className="w-full sm:w-36 h-40 bg-[#0A0A0D] overflow-hidden shrink-0">
+                      <img
+                        src={dropImg}
+                        alt={drop.name}
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = PRODUCT_PLACEHOLDER_IMAGE;
+                        }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 text-[10px] uppercase text-[#00D9FF] font-semibold tracking-wider">
+                          <span>{drop.badge || 'NEW RELEASE'}</span>
+                          <span aria-hidden="true">·</span>
+                          <span className="text-[#9A9AA3]">{drop.category}</span>
+                        </div>
+                        <h4 className="font-display text-sm font-bold text-[#F5F5F7] mt-1 group-hover:text-white transition-colors">
+                          {drop.name}
+                        </h4>
+                        <p className="text-xs text-[#9A9AA3] mt-2 line-clamp-2">
+                          {drop.description}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-[#2A2A32] flex items-center justify-between">
+                        <span className="font-mono-numbers text-sm font-bold text-[#F5F5F7]">
+                          {isSidePricePlaceholder ? 'Price On Request' : `₹${drop.price.toLocaleString('en-IN')}`}
+                        </span>
+                        <span className="text-xs font-semibold text-[#C7CBD3] group-hover:text-[#8B5CF6] flex items-center gap-1 transition-colors">
+                          Explore <ArrowRight size={12} />
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </ScrollReveal>
-            ))}
+                </ScrollReveal>
+              );
+            })}
           </div>
         </div>
       </div>
