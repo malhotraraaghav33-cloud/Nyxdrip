@@ -12,6 +12,7 @@ export interface PaymentConfig {
 export interface RazorpayOrderResponse {
   orderId: string;
   orderNumber: string;
+  guestAccessToken?: string;
   razorpayOrderId: string;
   amount: number;
   currency: string;
@@ -21,6 +22,7 @@ export interface RazorpayOrderResponse {
 export interface PayPalOrderResponse {
   orderId: string;
   orderNumber: string;
+  guestAccessToken?: string;
   paypalOrderId: string;
   amount: number;
   currency: string;
@@ -116,10 +118,11 @@ export const getPaymentConfig = async (): Promise<PaymentConfig> => {
 };
 
 /**
- * Initiates Razorpay Order on server
+ * Initiates Razorpay Order on server (supports both authenticated users and guests)
  */
 export const createRazorpayOrder = async (params: {
   shippingAddress: CustomerInfo;
+  items?: any[];
   couponCode?: string | null;
   idempotencyKey: string;
   deliveryMethod?: string;
@@ -147,7 +150,7 @@ export const verifyRazorpayPayment = async (params: {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-}): Promise<{ success: boolean; orderId: string; orderNumber: string }> => {
+}): Promise<{ success: boolean; orderId: string; orderNumber: string; guestAccessToken?: string }> => {
   const { data, error } = await supabase.functions.invoke('verify-razorpay-payment', {
     body: params,
   });
@@ -161,10 +164,11 @@ export const verifyRazorpayPayment = async (params: {
 };
 
 /**
- * Initiates PayPal Order on server
+ * Initiates PayPal Order on server (supports both authenticated users and guests)
  */
 export const createPayPalOrder = async (params: {
   shippingAddress: CustomerInfo;
+  items?: any[];
   couponCode?: string | null;
   idempotencyKey: string;
   deliveryMethod?: string;
@@ -186,7 +190,7 @@ export const createPayPalOrder = async (params: {
  */
 export const capturePayPalOrder = async (params: {
   paypalOrderId: string;
-}): Promise<{ success: boolean; orderId: string; orderNumber: string }> => {
+}): Promise<{ success: boolean; orderId: string; orderNumber: string; guestAccessToken?: string }> => {
   const { data, error } = await supabase.functions.invoke('capture-paypal-order', {
     body: params,
   });

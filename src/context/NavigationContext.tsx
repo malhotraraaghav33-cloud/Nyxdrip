@@ -20,6 +20,7 @@ interface NavigationParams {
   style?: string;
   search?: string;
   orderId?: string;
+  token?: string;
 }
 
 interface NavigationContextType {
@@ -92,9 +93,13 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setCurrentView('account');
     } else if (route === 'admin') {
       setCurrentView('admin');
-    } else if (route === 'order-confirmation') {
+    } else if (route === 'order-confirmation' || route === 'order') {
       setCurrentView('order-confirmation');
-      setParams({ orderId: identifier });
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashQuery = hash.includes('?') ? new URLSearchParams(hash.split('?')[1]) : null;
+      const orderId = (identifier ? identifier.split('?')[0] : '') || urlParams.get('orderId') || hashQuery?.get('orderId') || undefined;
+      const token = urlParams.get('token') || hashQuery?.get('token') || undefined;
+      setParams({ orderId, token });
     } else if (route === 'collections' && identifier) {
       setCurrentView('shop');
       setParams({ category: identifier });

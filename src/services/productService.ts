@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { Product } from '../types';
-import { PRODUCTS, CATEGORIES_DATA } from '../data/products';
+import { PRODUCTS, CATEGORIES_DATA, SLUG_ALIASES } from '../data/products';
 import { getProductImages } from '../lib/productImage';
 
 let cachedProducts: Product[] | null = null;
@@ -26,6 +26,7 @@ export const mapDbProductToFrontend = (row: any): Product => {
     name: row.name,
     price: priceNum,
     priceIsPlaceholder: isPlaceholderPrice,
+    pieceUnit: row.piece_unit || (row.slug === 'royal-fleur-studs' ? '1 PC' : undefined),
     originalPrice: row.original_price ? Number(row.original_price) : undefined,
     category: (row.category || row.category_name || 'Necklaces') as any,
     description: row.description || `[Placeholder — description to be updated] ${row.name} from the NYx DRIPstore collection.`,
@@ -94,8 +95,9 @@ export const fetchAllProducts = async (forceRefresh = false): Promise<Product[]>
 /**
  * Fetches a single product by slug or ID with fallback
  */
-export const fetchProductBySlug = async (slug: string): Promise<Product | null> => {
-  if (!slug) return null;
+export const fetchProductBySlug = async (rawSlug: string): Promise<Product | null> => {
+  if (!rawSlug) return null;
+  const slug = SLUG_ALIASES[rawSlug] || rawSlug;
 
   // Check cache first
   if (cachedProducts) {

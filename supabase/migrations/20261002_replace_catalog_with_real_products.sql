@@ -223,7 +223,7 @@ INSERT INTO public.products (
     10,
     true,
     true,
-    ARRAY['/assets/products/placeholder.svg']::TEXT[]
+    ARRAY['/nyxdrip2.0/red cross pendent/file_00000000ccc081f48693e3f5597033c2.png']::TEXT[]
 ),
 (
     'bersek-pendant',
@@ -235,7 +235,7 @@ INSERT INTO public.products (
     10,
     true,
     true,
-    ARRAY['/assets/products/placeholder.svg']::TEXT[]
+    ARRAY['/nyxdrip2.0/Bersek pendent/file_00000000669c82108310d8a5f6ca67a5.png']::TEXT[]
 ),
 (
     'ch-pendant',
@@ -247,7 +247,7 @@ INSERT INTO public.products (
     10,
     true,
     true,
-    ARRAY['/assets/products/placeholder.svg']::TEXT[]
+    ARRAY['/nyxdrip2.0/Ch pendent/file_000000008d208210a4fb4b6cb8b9613b.png']::TEXT[]
 ),
 (
     'double-cross-pendant',
@@ -259,7 +259,10 @@ INSERT INTO public.products (
     10,
     true,
     true,
-    ARRAY['/assets/products/placeholder.svg']::TEXT[]
+    ARRAY[
+        '/nyxdrip2.0/Double cross pendent/file_00000000f2a082108e6a99793e3bbfff.png',
+        '/nyxdripscreenshot/Double cross pendent/IMG_20261002_125433_250.jpg'
+    ]::TEXT[]
 ),
 (
     'snake-cross-necklace',
@@ -271,7 +274,7 @@ INSERT INTO public.products (
     10,
     true,
     true,
-    ARRAY['/assets/products/placeholder.svg']::TEXT[]
+    ARRAY['/nyxdrip2.0/Snake cross nekclace/IMG_20261002_125440_660.jpg']::TEXT[]
 )
 ON CONFLICT (slug) DO UPDATE SET
     name = EXCLUDED.name,

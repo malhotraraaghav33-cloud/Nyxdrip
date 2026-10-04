@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#15151B" />
+      <stop offset="100%" stop-color="#0A0A0D" />
+    </radialGradient>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2A2A32" stop-opacity="0.3" />
+      <stop offset="50%" stop-color="#8B5CF6" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#2A2A32" stop-opacity="0.3" />
+    </linearGradient>
+  </defs>
+
+  <!-- Solid Dark Background -->
+  <rect width="800" height="1000" fill="url(#bgGrad)" />
+
+  <!-- Subtle Outer Framing -->
+  <rect x="30" y="30" width="740" height="940" fill="none" stroke="#1E1E26" stroke-width="1.5" />
+  <rect x="42" y="42" width="716" height="916" fill="none" stroke="#171720" stroke-width="1" stroke-dasharray="4 6" />
+
+  <!-- Minimal Corner Accents -->
+  <path d="M 30 70 L 30 30 L 70 30" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-opacity="0.6" />
+  <path d="M 770 70 L 770 30 L 730 30" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-opacity="0.6" />
+  <path d="M 30 930 L 30 970 L 70 970" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-opacity="0.6" />
+  <path d="M 770 930 L 770 970 L 730 970" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-opacity="0.6" />
+
+  <!-- Center Gothic Crosshair / Hardware Emblem -->
+  <g transform="translate(400, 460)">
+    <!-- Subtle outer ring -->
+    <circle r="70" fill="none" stroke="#22222D" stroke-width="1.5" />
+    <circle r="60" fill="none" stroke="url(#lineGrad)" stroke-width="1.5" />
+    
+    <!-- Cross axes -->
+    <line x1="-90" y1="0" x2="90" y2="0" stroke="#2A2A35" stroke-width="1" />
+    <line x1="0" y1="-90" x2="0" y2="90" stroke="#2A2A35" stroke-width="1" />
+
+    <!-- Center diamond emblem -->
+    <polygon points="0,-22 22,0 0,22 -22,0" fill="#121217" stroke="#8B5CF6" stroke-width="1.5" stroke-opacity="0.8" />
+    <circle r="3" fill="#00D9FF" opacity="0.9" />
+
+    <!-- Subtly styled NX Monogram -->
+    <text y="-32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#8B5CF6" text-anchor="middle" letter-spacing="4" opacity="0.8">NYX</text>
+  </g>
+
+  <!-- Typography -->
+  <g text-anchor="middle">
+    <text x="400" y="585" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="800" fill="#F5F5F7" letter-spacing="6" opacity="0.9">
+      NYx DRIPSTORE
+    </text>
+    <text x="400" y="615" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#71717A" letter-spacing="4" text-transform="uppercase">
+      PHOTO COMING SOON
+    </text>
+    <text x="400" y="640" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" fill="#4B4B58" letter-spacing="2">
+      ARCHIVE COLLECTION · 2026
+    </text>
+  </g>
+</svg>

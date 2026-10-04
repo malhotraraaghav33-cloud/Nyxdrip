@@ -16,7 +16,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onFilterChange,
   onResetFilters,
   productCount,
-  availableCategories = ['Necklaces', 'Pendants', 'Wallets', 'Bracelets', 'Studs / Earrings', 'Caps'],
+  availableCategories = ['Necklaces', 'Pendants', 'Wallets', 'Bracelets', 'Studs / Earrings', 'Caps', 'Accessories'],
   availableStyles = ['Y2K'],
   availableColors = ['Black', 'Blue', 'Red'],
 }) => {

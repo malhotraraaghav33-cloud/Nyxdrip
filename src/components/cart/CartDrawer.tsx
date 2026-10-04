@@ -163,6 +163,11 @@ export const CartDrawer: React.FC = () => {
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="text-xs font-semibold text-[#F5F5F7] line-clamp-1">
                             {item.product.name}
+                            {(item.product.pieceUnit || item.product.slug === 'royal-fleur-studs') && (
+                              <span className="text-[10px] text-[#8B5CF6] font-bold uppercase tracking-wider ml-1">
+                                ({item.product.pieceUnit || '1 PC'})
+                              </span>
+                            )}
                           </h4>
                           <button
                             type="button"

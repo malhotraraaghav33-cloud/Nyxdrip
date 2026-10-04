@@ -287,6 +287,15 @@
   transform: scale(2.25);
 }
 
+@keyframes slideshowProgressAnim {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {

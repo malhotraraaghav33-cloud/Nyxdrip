@@ -234,6 +234,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
                 <span className="font-mono-numbers text-sm font-bold text-[#F5F5F7]">
                   ₹{product.price.toLocaleString('en-IN')}
                 </span>
+                {(product.pieceUnit || product.slug === 'royal-fleur-studs') && (
+                  <span className="text-[10px] font-bold text-[#8B5CF6] uppercase tracking-wider border border-[#8B5CF6]/30 px-1 py-0.5 rounded-xs">
+                    {product.pieceUnit || '1 PC'}
+                  </span>
+                )}
                 {product.originalPrice && product.originalPrice > product.price && (
                   <span className="font-mono-numbers text-xs text-[#9A9AA3] line-through">
                     ₹{product.originalPrice.toLocaleString('en-IN')}

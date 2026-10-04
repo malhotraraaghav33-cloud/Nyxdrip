@@ -14,7 +14,8 @@ export const createOrderInDatabase = async (params: {
   deliveryMethod: string;
   paymentMethod: string;
   couponCode?: string | null;
-}): Promise<{ success: boolean; orderId: string; error?: string }> => {
+  guestAccessToken?: string;
+}): Promise<{ success: boolean; orderId: string; guestAccessToken?: string; error?: string }> => {
   const {
     orderNumber,
     userId,
@@ -27,11 +28,14 @@ export const createOrderInDatabase = async (params: {
     deliveryMethod,
     paymentMethod,
     couponCode,
+    guestAccessToken,
   } = params;
+
+  const resolvedGuestToken = guestAccessToken || (Math.random().toString(36).slice(2) + Date.now().toString(36));
 
   if (!isSupabaseConfigured) {
     // Return success in local mode so checkout completes without disruption
-    return { success: true, orderId: orderNumber };
+    return { success: true, orderId: orderNumber, guestAccessToken: resolvedGuestToken };
   }
 
   try {
@@ -44,6 +48,7 @@ export const createOrderInDatabase = async (params: {
         customer_email: customer.email,
         customer_phone: customer.phone,
         customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
+        guest_access_token: resolvedGuestToken,
         shipping_address: {
           address: customer.address,
           apartment: customer.apartment || null,
@@ -68,7 +73,7 @@ export const createOrderInDatabase = async (params: {
     if (orderError || !orderData) {
       console.warn('Supabase order creation note:', orderError?.message);
       // Return orderNumber as fallback ID so user isn't stuck
-      return { success: true, orderId: orderNumber };
+      return { success: true, orderId: orderNumber, guestAccessToken: resolvedGuestToken };
     }
 
     // 2. Insert item snapshots
@@ -222,4 +227,113 @@ export const fetchUserOrders = async (userId: string): Promise<Order[]> => {
     console.warn('Failed to load user orders:', err);
     return [];
   }
+};
+
+/**
+ * Securely fetches an order for guest customers using order_number + guest_access_token.
+ * Prevents unauthorized order snooping.
+ */
+export const fetchGuestOrderByToken = async (
+  orderNumber: string,
+  token: string
+): Promise<Order | null> => {
+  if (!isSupabaseConfigured || !orderNumber || !token) {
+    // Check localStorage fallback
+    try {
+      const stored = localStorage.getItem(`order_${orderNumber}`);
+      if (stored) return JSON.parse(stored);
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  try {
+    // Try RPC get_guest_order
+    const { data, error } = await supabase.rpc('get_guest_order', {
+      p_order_number: orderNumber.trim(),
+      p_token: token.trim(),
+    });
+
+    if (!error && data) {
+      const o = data;
+      const items: CartItem[] = (o.items || []).map((oi: any) => ({
+        product: {
+          id: oi.product_id,
+          slug: oi.product_slug,
+          name: oi.product_name,
+          price: Number(oi.price),
+          category: 'Accessories' as const,
+          description: '',
+          images: [oi.image || '/assets/placeholder.jpg'],
+          rating: 5,
+          reviewCount: 1,
+          stock: 10,
+          tags: [],
+          style: 'Gothic' as const,
+          color: 'Silver' as const,
+          materials: '',
+          careInstructions: '',
+        },
+        quantity: oi.quantity,
+        selectedVariant: oi.selected_variant,
+      }));
+
+      const addr = o.shipping_address || {};
+      const customer: CustomerInfo = {
+        email: o.customer_email,
+        phone: o.customer_phone,
+        firstName: o.customer_name?.split(' ')[0] || '',
+        lastName: o.customer_name?.split(' ').slice(1).join(' ') || '',
+        address: addr.address || '',
+        apartment: addr.apartment || '',
+        city: addr.city || '',
+        state: addr.state || '',
+        pincode: addr.pincode || '',
+        country: addr.country || 'India',
+      };
+
+      const estDate = new Date(new Date(o.created_at || Date.now()).getTime() + 4 * 24 * 60 * 60 * 1000);
+
+      return {
+        orderId: o.order_number,
+        items,
+        subtotal: Number(o.subtotal),
+        discount: Number(o.discount),
+        shipping: Number(o.shipping),
+        total: Number(o.total),
+        customer,
+        deliveryMethod: o.delivery_method,
+        paymentMethod: o.payment_provider || 'Prepaid',
+        status: o.order_status,
+        createdAt: o.created_at,
+        estimatedDelivery: estDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+      };
+    }
+
+    // Edge function fallback
+    const { data: edgeData, error: edgeErr } = await supabase.functions.invoke('get-guest-order', {
+      body: {},
+      headers: {},
+    });
+    if (!edgeErr && edgeData?.order) {
+      return edgeData.order;
+    }
+  } catch (err) {
+    console.warn('fetchGuestOrderByToken error:', err);
+  }
+
+  // Final localStorage fallback
+  try {
+    const stored = localStorage.getItem(`order_${orderNumber}`);
+    if (stored) return JSON.parse(stored);
+  } catch {
+    // ignore
+  }
+
+  return null;
 };

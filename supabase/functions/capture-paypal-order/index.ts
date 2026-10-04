@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { handleCors } from '../_shared/cors.ts';
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
-import { getAuthenticatedUser } from '../_shared/auth.ts';
+import { getOptionalUser } from '../_shared/auth.ts';
 import { errorResponse, successResponse } from '../_shared/errors.ts';
 import { capturePayPalApiOrder } from '../_shared/paypal.ts';
 import { triggerOrderConfirmationEmail } from '../_shared/email.ts';
@@ -12,7 +12,8 @@ serve(async (req: Request) => {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    const user = await getAuthenticatedUser(req, supabaseAdmin);
+    // Allow both authenticated users and guests
+    const user = await getOptionalUser(req, supabaseAdmin);
 
     const body = await req.json().catch(() => ({}));
     const { paypalOrderId } = body;
@@ -24,7 +25,7 @@ serve(async (req: Request) => {
     // 1. Fetch internal order and confirm ownership
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('id, order_number, user_id, payment_status, charged_amount, charged_currency')
+      .select('id, order_number, user_id, guest_access_token, payment_status, charged_amount, charged_currency')
       .eq('provider_order_id', paypalOrderId)
       .maybeSingle();
 
@@ -32,7 +33,8 @@ serve(async (req: Request) => {
       return errorResponse('ORDER_NOT_FOUND', 'Corresponding order could not be located.', 404);
     }
 
-    if (order.user_id !== user.id) {
+    // For authenticated orders, verify user matches. For guest orders (user_id === null), allow verification
+    if (order.user_id && (!user || order.user_id !== user.id)) {
       return errorResponse('UNAUTHORIZED', 'Access denied to this order.', 403);
     }
 
@@ -41,6 +43,7 @@ serve(async (req: Request) => {
         success: true,
         orderId: order.id,
         orderNumber: order.order_number,
+        guestAccessToken: order.guest_access_token,
         status: 'paid',
         alreadyPaid: true,
       });
@@ -90,6 +93,7 @@ serve(async (req: Request) => {
       success: true,
       orderId: order.id,
       orderNumber: order.order_number,
+      guestAccessToken: order.guest_access_token,
       status: 'paid',
     });
   } catch (err: unknown) {

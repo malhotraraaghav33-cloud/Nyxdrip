@@ -5,7 +5,8 @@ export interface Product {
   price: number;
   originalPrice?: number;
   priceIsPlaceholder?: boolean;
-  category: 'Necklaces' | 'Pendants' | 'Bracelets' | 'Studs / Earrings' | 'Wallets' | 'Caps' | string;
+  pieceUnit?: string;
+  category: 'Necklaces' | 'Pendants' | 'Bracelets' | 'Studs / Earrings' | 'Wallets' | 'Caps' | 'Accessories' | string;
   description: string;
   images: string[];
   rating?: number;

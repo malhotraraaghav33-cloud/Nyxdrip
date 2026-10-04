@@ -110,7 +110,14 @@ export const OrderConfirmationView: React.FC = () => {
                     />
                     <div>
                       <p className="text-xs uppercase text-[#9A9AA3]">{item.product.category}</p>
-                      <h4 className="text-sm font-semibold text-[#F5F5F7]">{item.product.name}</h4>
+                      <h4 className="text-sm font-semibold text-[#F5F5F7]">
+                        {item.product.name}
+                        {(item.product.pieceUnit || item.product.slug === 'royal-fleur-studs') && (
+                          <span className="text-[10px] text-[#8B5CF6] font-bold uppercase tracking-wider ml-1">
+                            ({item.product.pieceUnit || '1 PC'})
+                          </span>
+                        )}
+                      </h4>
                       <p className="text-[11px] text-[#9A9AA3]">
                         Qty: {item.quantity} · {item.selectedVariant}
                       </p>

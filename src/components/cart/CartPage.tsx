@@ -139,6 +139,11 @@ export const CartPage: React.FC = () => {
                             </span>
                             <h3 className="font-semibold text-sm sm:text-base text-[#F5F5F7] mt-0.5">
                               {item.product.name}
+                              {(item.product.pieceUnit || item.product.slug === 'royal-fleur-studs') && (
+                                <span className="text-xs text-[#8B5CF6] font-bold uppercase tracking-wider ml-1.5">
+                                  ({item.product.pieceUnit || '1 PC'})
+                                </span>
+                              )}
                             </h3>
                             {item.selectedVariant && (
                               <p className="text-xs text-[#9A9AA3] mt-1">

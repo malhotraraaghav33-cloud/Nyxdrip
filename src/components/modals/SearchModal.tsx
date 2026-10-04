@@ -42,7 +42,7 @@ export const SearchModal: React.FC = () => {
       }).slice(0, 6)
     : [];
 
-  const popularSearches = ['Chrome Cross', 'Cyber Ring', 'Spikes', 'Cuban Chain', 'Wallets', 'Obsidian'];
+  const popularSearches = ['Cross Necklace', 'Wallets', 'CH Pendant', 'Y2K Glass', 'CH Bracelet', 'Royal Fleur'];
 
   const handleSelectProduct = (slug: string) => {
     closeSearchModal();

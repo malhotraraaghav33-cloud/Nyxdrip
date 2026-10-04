@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Product } from '../types';
-import { PRODUCTS } from '../data/products';
+import { PRODUCTS, SLUG_ALIASES } from '../data/products';
 
 export const GUEST_CART_STORAGE_KEY = 'nyx_guest_cart_v1';
 export const MAX_ITEM_QUANTITY = 99;
@@ -25,7 +25,8 @@ export const setRuntimeProductsCache = (prods: Product[]) => {
  */
 export const getProductByKey = (productKey: string): Product | null => {
   if (!productKey || typeof productKey !== 'string') return null;
-  const normalized = productKey.trim().toLowerCase();
+  const rawKey = productKey.trim().toLowerCase();
+  const normalized = SLUG_ALIASES[rawKey] || rawKey;
   
   // 1. Check runtime Supabase products
   const foundInRuntime = runtimeProductsCache.find(

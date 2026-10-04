@@ -39,7 +39,6 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
   // Slideshow state
   const [isSlideshowActive, setIsSlideshowActive] = useState(totalSlides > 1);
   const [isHovered, setIsHovered] = useState(false);
-  const [slideshowProgress, setSlideshowProgress] = useState(0);
   const SLIDESHOW_DURATION = 4000; // 4 seconds per slide
 
   // Hover magnifier zoom state
@@ -57,35 +56,24 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
   // Navigation handlers
   const goToNext = useCallback(() => {
     onSelectIndex((selectedIndex + 1) % totalSlides);
-    setSlideshowProgress(0);
   }, [selectedIndex, totalSlides, onSelectIndex]);
 
   const goToPrev = useCallback(() => {
     onSelectIndex((selectedIndex - 1 + totalSlides) % totalSlides);
-    setSlideshowProgress(0);
   }, [selectedIndex, totalSlides, onSelectIndex]);
 
-  // Slideshow timer effect
+  // Slideshow timer effect - clean interval without state updater side-effects
   useEffect(() => {
     if (!isSlideshowActive || totalSlides <= 1 || isHovered || isLightboxOpen) {
       return;
     }
 
-    const intervalTime = 50;
-    const step = (intervalTime / SLIDESHOW_DURATION) * 100;
-
     const timer = setInterval(() => {
-      setSlideshowProgress((prev) => {
-        if (prev >= 100) {
-          goToNext();
-          return 0;
-        }
-        return prev + step;
-      });
-    }, intervalTime);
+      onSelectIndex((selectedIndex + 1) % totalSlides);
+    }, SLIDESHOW_DURATION);
 
     return () => clearInterval(timer);
-  }, [isSlideshowActive, totalSlides, isHovered, isLightboxOpen, goToNext]);
+  }, [isSlideshowActive, totalSlides, isHovered, isLightboxOpen, selectedIndex, onSelectIndex]);
 
   // Touch gestures for mobile swipe
   const onTouchStart = (e: React.TouchEvent) => {
@@ -184,7 +172,6 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
                 type="button"
                 onClick={() => {
                   onSelectIndex(idx);
-                  setSlideshowProgress(0);
                 }}
                 className={`group relative w-16 h-20 sm:w-20 sm:h-24 bg-[#15151B] border transition-all duration-200 shrink-0 overflow-hidden ${
                   isSelected
@@ -204,10 +191,13 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
                     isSelected ? 'scale-105' : 'group-hover:scale-105'
                   }`}
                 />
-                {isSelected && isSlideshowActive && (
+                {isSelected && isSlideshowActive && !isHovered && (
                   <div 
-                    className="absolute bottom-0 inset-x-0 h-0.5 bg-[#8B5CF6] transition-all duration-75"
-                    style={{ width: `${slideshowProgress}%` }}
+                    key={selectedIndex}
+                    className="absolute bottom-0 inset-x-0 h-0.5 bg-[#8B5CF6]"
+                    style={{
+                      animation: `slideshowProgressAnim ${SLIDESHOW_DURATION}ms linear forwards`,
+                    }}
                   />
                 )}
                 <div className="absolute top-1 left-1.5 text-[9px] font-mono-numbers px-1 py-0.2 bg-[#0A0A0D]/80 border border-[#2A2A32] text-[#C7CBD3]">
@@ -374,8 +364,11 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
         {totalSlides > 1 && isSlideshowActive && !isHovered && (
           <div className="absolute bottom-0 inset-x-0 h-1 bg-[#15151B] z-20 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#00D9FF] transition-all duration-75 ease-linear"
-              style={{ width: `${slideshowProgress}%` }}
+              key={selectedIndex}
+              className="h-full bg-gradient-to-r from-[#8B5CF6] to-[#00D9FF]"
+              style={{
+                animation: `slideshowProgressAnim ${SLIDESHOW_DURATION}ms linear forwards`,
+              }}
             />
           </div>
         )}

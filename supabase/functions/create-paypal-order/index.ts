@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { handleCors } from '../_shared/cors.ts';
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
-import { getAuthenticatedUser } from '../_shared/auth.ts';
+import { getOptionalUser } from '../_shared/auth.ts';
 import { errorResponse, successResponse, sanitizeErrorMessage } from '../_shared/errors.ts';
 import { createPayPalApiOrder, getPayPalCredentials } from '../_shared/paypal.ts';
 
@@ -11,26 +11,47 @@ serve(async (req: Request) => {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    const user = await getAuthenticatedUser(req, supabaseAdmin);
+    // Allow both authenticated users and guests
+    const user = await getOptionalUser(req, supabaseAdmin);
 
     const body = await req.json().catch(() => ({}));
-    const { shippingAddress, couponCode, idempotencyKey, deliveryMethod = 'standard' } = body;
+    const {
+      shippingAddress,
+      customer,
+      items,
+      couponCode,
+      idempotencyKey,
+      deliveryMethod = 'standard',
+    } = body;
 
-    if (!shippingAddress || typeof shippingAddress !== 'object') {
+    const resolvedAddress = shippingAddress || customer;
+    if (!resolvedAddress || typeof resolvedAddress !== 'object') {
       return errorResponse('INVALID_ADDRESS', 'A valid shipping address is required.');
+    }
+
+    const guestEmail = resolvedAddress.email || customer?.email || user?.email || null;
+    const guestName = `${resolvedAddress.firstName || ''} ${resolvedAddress.lastName || ''}`.trim() || customer?.name || null;
+    const guestPhone = resolvedAddress.phone || customer?.phone || null;
+
+    if (!guestEmail) {
+      return errorResponse('INVALID_EMAIL', 'A valid customer email address is required.');
     }
 
     const { currency } = getPayPalCredentials();
 
     // 1. Call atomic database RPC create_pending_order
     const { data: orderData, error: rpcError } = await supabaseAdmin.rpc('create_pending_order', {
-      p_user_id: user.id,
+      p_user_id: user?.id || null,
       p_provider: 'paypal',
       p_idempotency_key: idempotencyKey || null,
       p_coupon_code: couponCode || null,
-      p_shipping_address: shippingAddress,
+      p_shipping_address: resolvedAddress,
       p_delivery_method: deliveryMethod,
       p_charged_currency: currency,
+      p_guest_email: guestEmail,
+      p_guest_name: guestName,
+      p_guest_phone: guestPhone,
+      p_items: Array.isArray(items) && items.length > 0 ? items : null,
     });
 
     if (rpcError || !orderData) {
@@ -40,6 +61,7 @@ serve(async (req: Request) => {
 
     const orderId = orderData.order_id;
     const orderNumber = orderData.order_number;
+    const guestAccessToken = orderData.guest_access_token;
     const chargedAmount = Number(orderData.charged_amount);
 
     // If order already has a PayPal order ID from idempotency reuse, return it
@@ -47,6 +69,7 @@ serve(async (req: Request) => {
       return successResponse({
         orderId,
         orderNumber,
+        guestAccessToken,
         paypalOrderId: orderData.provider_order_id,
         amount: chargedAmount,
         currency,
@@ -81,6 +104,7 @@ serve(async (req: Request) => {
     return successResponse({
       orderId,
       orderNumber,
+      guestAccessToken,
       paypalOrderId: paypalOrder.id,
       amount: chargedAmount,
       currency,

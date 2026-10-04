@@ -24,7 +24,7 @@ export type PaymentStep =
   | 'failed';
 
 export interface UsePaymentProps {
-  onSuccess: (orderId: string, orderNumber: string) => void;
+  onSuccess: (orderId: string, orderNumber: string, guestAccessToken?: string) => void;
   onError: (message: string) => void;
   onCartChanged?: () => void;
 }
@@ -61,6 +61,7 @@ export const usePayment = ({ onSuccess, onError, onCartChanged }: UsePaymentProp
   const startRazorpayCheckout = useCallback(
     async (params: {
       customer: CustomerInfo;
+      items?: any[];
       couponCode?: string | null;
       deliveryMethod: string;
       preselectedMethod?: 'upi' | 'card' | 'netbanking' | 'wallets';
@@ -82,6 +83,7 @@ export const usePayment = ({ onSuccess, onError, onCartChanged }: UsePaymentProp
         // 2. Create server-side Razorpay order
         const rzpOrder = await createRazorpayOrder({
           shippingAddress: params.customer,
+          items: params.items,
           couponCode: params.couponCode,
           idempotencyKey: idempotencyKeyRef.current,
           deliveryMethod: params.deliveryMethod,
@@ -132,7 +134,7 @@ export const usePayment = ({ onSuccess, onError, onCartChanged }: UsePaymentProp
               if (verifyResult.success) {
                 setPaymentStep('success');
                 isSubmittingRef.current = false;
-                onSuccess(verifyResult.orderId, verifyResult.orderNumber);
+                onSuccess(verifyResult.orderId, verifyResult.orderNumber, verifyResult.guestAccessToken || rzpOrder.guestAccessToken);
               }
             } catch (err: unknown) {
               console.warn('Verification request error, checking polling fallback...', err);
@@ -142,7 +144,7 @@ export const usePayment = ({ onSuccess, onError, onCartChanged }: UsePaymentProp
                 if (polledStatus === 'paid') {
                   setPaymentStep('success');
                   isSubmittingRef.current = false;
-                  onSuccess(activeOrderIdRef.current, rzpOrder.orderNumber);
+                  onSuccess(activeOrderIdRef.current, rzpOrder.orderNumber, rzpOrder.guestAccessToken);
                   return;
                 }
               }
@@ -201,6 +203,7 @@ export const usePayment = ({ onSuccess, onError, onCartChanged }: UsePaymentProp
       containerElement: HTMLElement,
       params: {
         customer: CustomerInfo;
+        items?: any[];
         couponCode?: string | null;
         deliveryMethod: string;
       }
@@ -214,6 +217,7 @@ export const usePayment = ({ onSuccess, onError, onCartChanged }: UsePaymentProp
       }
 
       containerElement.innerHTML = '';
+      let activeGuestToken: string | undefined = undefined;
 
       (window as any).paypal
         .Buttons({
@@ -231,12 +235,14 @@ export const usePayment = ({ onSuccess, onError, onCartChanged }: UsePaymentProp
             try {
               const res = await createPayPalOrder({
                 shippingAddress: params.customer,
+                items: params.items,
                 couponCode: params.couponCode,
                 idempotencyKey: idempotencyKeyRef.current,
                 deliveryMethod: params.deliveryMethod,
               });
 
               activeOrderIdRef.current = res.orderId;
+              activeGuestToken = res.guestAccessToken;
               return res.paypalOrderId;
             } catch (err: unknown) {
               isSubmittingRef.current = false;
@@ -258,7 +264,7 @@ export const usePayment = ({ onSuccess, onError, onCartChanged }: UsePaymentProp
               if (captureRes.success) {
                 setPaymentStep('success');
                 isSubmittingRef.current = false;
-                onSuccess(captureRes.orderId, captureRes.orderNumber);
+                onSuccess(captureRes.orderId, captureRes.orderNumber, captureRes.guestAccessToken || activeGuestToken);
               }
             } catch (err: unknown) {
               console.warn('PayPal capture error, checking polling fallback...', err);
@@ -267,7 +273,7 @@ export const usePayment = ({ onSuccess, onError, onCartChanged }: UsePaymentProp
                 if (polled === 'paid') {
                   setPaymentStep('success');
                   isSubmittingRef.current = false;
-                  onSuccess(activeOrderIdRef.current, 'CONFIRMED');
+                  onSuccess(activeOrderIdRef.current, 'CONFIRMED', activeGuestToken);
                   return;
                 }
               }

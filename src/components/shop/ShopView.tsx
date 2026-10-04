@@ -58,6 +58,10 @@ export const ShopView: React.FC = () => {
     setSortBy('featured');
   };
 
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(products.map((p) => p.category))).filter(Boolean);
+  }, [products]);
+
   // Filter products
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -113,7 +117,7 @@ export const ShopView: React.FC = () => {
 
       return true;
     });
-  }, [filters]);
+  }, [filters, products]);
 
   // Sort products
   const sortedProducts = useMemo(() => {
@@ -229,6 +233,7 @@ export const ShopView: React.FC = () => {
               onFilterChange={handleFilterChange}
               onResetFilters={handleResetFilters}
               productCount={sortedProducts.length}
+              availableCategories={availableCategories}
             />
           </div>
 
@@ -279,6 +284,7 @@ export const ShopView: React.FC = () => {
         onFilterChange={handleFilterChange}
         onResetFilters={handleResetFilters}
         productCount={sortedProducts.length}
+        availableCategories={availableCategories}
       />
     </div>
   );

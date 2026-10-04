@@ -3,7 +3,7 @@ import { handleCors } from '../_shared/cors.ts';
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
 import { getOptionalUser } from '../_shared/auth.ts';
 import { errorResponse, successResponse, sanitizeErrorMessage } from '../_shared/errors.ts';
-import { createRazorpayApiOrder, getRazorpayCredentials } from '../_shared/razorpay.ts';
+import { triggerOrderConfirmationEmail } from '../_shared/email.ts';
 
 serve(async (req: Request) => {
   const cors = handleCors(req);
@@ -11,7 +11,7 @@ serve(async (req: Request) => {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    // Allow both authenticated users and guests
+    // Support both logged-in users and guests
     const user = await getOptionalUser(req, supabaseAdmin);
 
     const body = await req.json().catch(() => ({}));
@@ -22,6 +22,8 @@ serve(async (req: Request) => {
       couponCode,
       idempotencyKey,
       deliveryMethod = 'standard',
+      paymentMethod = 'mock',
+      autoFinalize = false,
     } = body;
 
     const resolvedAddress = shippingAddress || customer;
@@ -37,10 +39,10 @@ serve(async (req: Request) => {
       return errorResponse('INVALID_EMAIL', 'A valid customer email address is required.');
     }
 
-    // 1. Call atomic database RPC create_pending_order
+    // Call atomic database RPC create_pending_order
     const { data: orderData, error: rpcError } = await supabaseAdmin.rpc('create_pending_order', {
       p_user_id: user?.id || null,
-      p_provider: 'razorpay',
+      p_provider: paymentMethod,
       p_idempotency_key: idempotencyKey || null,
       p_coupon_code: couponCode || null,
       p_shipping_address: resolvedAddress,
@@ -61,62 +63,32 @@ serve(async (req: Request) => {
     const orderNumber = orderData.order_number;
     const guestAccessToken = orderData.guest_access_token;
     const totalAmount = Number(orderData.total);
-    const amountPaise = Math.round(totalAmount * 100);
 
-    // If order already had a Razorpay order ID (from idempotency reuse), return it
-    if (orderData.is_existing && orderData.provider_order_id) {
-      const { keyId } = getRazorpayCredentials();
-      return successResponse({
-        orderId,
-        orderNumber,
-        guestAccessToken,
-        razorpayOrderId: orderData.provider_order_id,
-        amount: totalAmount,
-        currency: 'INR',
-        keyId,
-      });
-    }
-
-    // 2. Create Razorpay order via official API
-    let razorpayOrder;
-    try {
-      razorpayOrder = await createRazorpayApiOrder({
-        amountPaise,
-        currency: 'INR',
-        receipt: orderNumber,
-        notes: {
-          order_id: orderId,
-          user_id: user?.id || 'guest',
-          customer_email: guestEmail,
-          order_number: orderNumber,
-        },
-      });
-    } catch (rzpErr) {
-      console.error('Razorpay order creation error:', rzpErr);
-      // Release inventory reservation if gateway call fails
-      await supabaseAdmin.rpc('release_order_reservation', {
+    // If autoFinalize is requested (for test/offline/direct orders):
+    if (autoFinalize) {
+      await supabaseAdmin.rpc('finalize_paid_order', {
         p_order_id: orderId,
-        p_new_payment_status: 'failed',
+        p_provider: paymentMethod,
+        p_provider_payment_id: `manual_${Date.now()}`,
+        p_amount: totalAmount,
+        p_currency: 'INR',
       });
-      return errorResponse('GATEWAY_ERROR', 'Unable to initialize Razorpay checkout. Please try again.', 502);
+
+      triggerOrderConfirmationEmail(supabaseAdmin, orderId).catch((e) =>
+        console.warn('Email trigger warning:', e)
+      );
     }
-
-    // 3. Save provider_order_id
-    await supabaseAdmin
-      .from('orders')
-      .update({ provider_order_id: razorpayOrder.id, updated_at: new Date().toISOString() })
-      .eq('id', orderId);
-
-    const { keyId } = getRazorpayCredentials();
 
     return successResponse({
       orderId,
       orderNumber,
       guestAccessToken,
-      razorpayOrderId: razorpayOrder.id,
-      amount: totalAmount,
+      subtotal: Number(orderData.subtotal),
+      discount: Number(orderData.discount),
+      shipping: Number(orderData.shipping),
+      total: totalAmount,
       currency: 'INR',
-      keyId,
+      status: autoFinalize ? 'paid' : 'pending',
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);

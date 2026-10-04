@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { handleCors } from '../_shared/cors.ts';
 import { getSupabaseAdmin } from '../_shared/supabaseAdmin.ts';
-import { getAuthenticatedUser } from '../_shared/auth.ts';
+import { getOptionalUser } from '../_shared/auth.ts';
 import { errorResponse, successResponse } from '../_shared/errors.ts';
 
 serve(async (req: Request) => {
@@ -10,7 +10,7 @@ serve(async (req: Request) => {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
-    const user = await getAuthenticatedUser(req, supabaseAdmin);
+    const user = await getOptionalUser(req, supabaseAdmin);
 
     const body = await req.json().catch(() => ({}));
     const { orderId } = body;
@@ -19,7 +19,7 @@ serve(async (req: Request) => {
       return errorResponse('INVALID_PAYLOAD', 'orderId is required');
     }
 
-    // Verify ownership
+    // Verify order
     const { data: order } = await supabaseAdmin
       .from('orders')
       .select('id, user_id, payment_status')
@@ -30,7 +30,8 @@ serve(async (req: Request) => {
       return errorResponse('ORDER_NOT_FOUND', 'Order not found', 404);
     }
 
-    if (order.user_id !== user.id) {
+    // If order was created by an authenticated user, require that user
+    if (order.user_id && (!user || order.user_id !== user.id)) {
       return errorResponse('UNAUTHORIZED', 'Access denied to this order', 403);
     }
 

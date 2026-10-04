@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Truck, RefreshCw, ShieldCheck, ArrowLeft, ChevronDown, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
-import { PRODUCTS } from '../../data/products';
+import { PRODUCTS, SLUG_ALIASES } from '../../data/products';
 import { useNavigation } from '../../context/NavigationContext';
 import { useCart } from '../../context/CartContext';
 import { useProducts } from '../../context/ProductContext';
@@ -25,8 +25,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
   const { user, profile } = useAuth();
   const { showToast } = useToast();
 
-  const productSlug = slug || params.productId;
-  const product = products.find((p) => p.slug === productSlug || p.id === productSlug) || products[0];
+  const rawSlug = slug || params.productId;
+  const productSlug = rawSlug ? (SLUG_ALIASES[rawSlug] || rawSlug) : '';
+  const product = products.find((p) => p.slug === productSlug || p.id === productSlug || (rawSlug && p.slug === rawSlug)) || products[0];
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState(
@@ -213,6 +214,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
                         <span className="font-mono-numbers text-2xl sm:text-3xl font-bold text-[#F5F5F7]">
                           ₹{product.price.toLocaleString('en-IN')}
                         </span>
+                        {(product.pieceUnit || product.slug === 'royal-fleur-studs') && (
+                          <span className="px-2 py-0.5 bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 text-xs font-bold tracking-widest uppercase">
+                            Price for {product.pieceUnit || '1 PC'} (Single Piece)
+                          </span>
+                        )}
                         {product.originalPrice && product.originalPrice > product.price && (
                           <span className="font-mono-numbers text-sm text-[#9A9AA3] line-through">
                             ₹{product.originalPrice.toLocaleString('en-IN')}
