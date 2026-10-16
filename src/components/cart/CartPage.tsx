@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Trash2, ArrowRight, ShieldCheck, Tag, Loader2, RefreshCw } from 'lucide-react';
+import { Trash2, ArrowRight, ShieldCheck, Tag, Loader2, RefreshCw, MessageSquare } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useNavigation } from '../../context/NavigationContext';
 import { QuantitySelector } from '../common/QuantitySelector';
 import { PRODUCTS } from '../../data/products';
 import { ScrollReveal } from '../common/ScrollReveal';
 import { Magnetic } from '../common/Magnetic';
+import { buildWhatsAppOrderUrl } from '../../utils/whatsappOrder';
 
 export const CartPage: React.FC = () => {
   const {
@@ -253,16 +254,35 @@ export const CartPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <Magnetic strength={10} className="w-full">
-                    <button
-                      type="button"
-                      onClick={() => navigateTo('checkout')}
-                      className="w-full py-3.5 bg-[#8B5CF6] hover:bg-[#7c4def] text-white text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95"
+                  <div className="space-y-2">
+                    <Magnetic strength={10} className="w-full">
+                      <button
+                        type="button"
+                        onClick={() => navigateTo('checkout')}
+                        className="w-full py-3.5 bg-[#8B5CF6] hover:bg-[#7c4def] text-white text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95"
+                      >
+                        <span>Proceed to Checkout</span>
+                        <ArrowRight size={14} />
+                      </button>
+                    </Magnetic>
+
+                    <a
+                      href={buildWhatsAppOrderUrl({
+                        items,
+                        subtotal,
+                        discount,
+                        shipping,
+                        total,
+                        couponCode: appliedCoupon?.code,
+                      })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 bg-[#15151B] hover:bg-[#1f1f27] border border-[#2A2A32] hover:border-[#00D9FF] text-[#F5F5F7] text-[11px] font-bold tracking-wider uppercase flex items-center justify-center gap-2 transition-all active:scale-95"
                     >
-                      <span>Proceed to Checkout</span>
-                      <ArrowRight size={14} />
-                    </button>
-                  </Magnetic>
+                      <MessageSquare size={13} className="text-[#00D9FF]" />
+                      <span>Order / Inquire via WhatsApp</span>
+                    </a>
+                  </div>
 
                   <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#9A9AA3] pt-2">
                     <ShieldCheck size={13} className="text-[#00D9FF]" />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Instagram, MessageSquare } from 'lucide-react';
 import { useNavigation } from '../../context/NavigationContext';
 
 export const Footer: React.FC = () => {
@@ -148,16 +149,26 @@ export const Footer: React.FC = () => {
                 </button>
               </li>
               <li>
-                <span className="hover:text-[#F5F5F7] cursor-pointer">Instagram @nyxdripstore</span>
+                <a
+                  href="https://www.instagram.com/nyxdrip.store?mdxt=YmhiY21xeGZhd2Fn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#F5F5F7] transition-colors flex items-center gap-2"
+                >
+                  <Instagram size={13} className="text-[#8B5CF6]" />
+                  <span>Instagram @nyxdrip.store</span>
+                </a>
               </li>
               <li>
-                <span className="hover:text-[#F5F5F7] cursor-pointer">TikTok @nyxdrip</span>
-              </li>
-              <li>
-                <span className="hover:text-[#F5F5F7] cursor-pointer">Pinterest @nyxdriparchive</span>
-              </li>
-              <li>
-                <span className="hover:text-[#F5F5F7] cursor-pointer">YouTube @nyxdripstudios</span>
+                <a
+                  href="https://wa.me/919354129232"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#F5F5F7] transition-colors flex items-center gap-2"
+                >
+                  <MessageSquare size={13} className="text-[#00D9FF]" />
+                  <span>WhatsApp: +91 93541 29232</span>
+                </a>
               </li>
             </ul>
           </div>

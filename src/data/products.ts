@@ -203,16 +203,17 @@ export const PRODUCTS: Product[] = [
     isNewArrival: true,
   },
 
-  // 8. CH Pendant — ₹169
+  // 8. CH Pendant — ₹149
   {
     id: 'prod-ch-pendant',
     slug: 'ch-pendant',
     name: 'CH Pendant',
-    price: 169,
+    price: 149,
     category: 'Pendants',
     description: 'CH Pendant from the NYx DRIPstore collection. Sculpted gothic cross centerpiece.',
     images: [
-      '/nyxdrip2.0/Ch pendent/file_000000008d208210a4fb4b6cb8b9613b.png',
+      '/nyxdrip2.0/Bersek pendent/file_00000000669c82108310d8a5f6ca67a5.png',
+      '/nyxdripscreenshot/bersek pendent/Screenshot_20261002-124228.jpg',
     ],
     stock: 10,
     isNewArrival: true,
@@ -234,17 +235,17 @@ export const PRODUCTS: Product[] = [
     isNewArrival: true,
   },
 
-  // 10. Double Cross Pendant — ₹149
+  // 10. Double Cross Pendant — ₹169
   {
     id: 'prod-double-cross-pendant',
     slug: 'double-cross-pendant',
     name: 'Double Cross Pendant',
-    price: 149,
+    price: 169,
     category: 'Pendants',
     description: 'Double Cross Pendant from the NYx DRIPstore collection. Interlocking double cross motif.',
     images: [
-      '/nyxdrip2.0/Double cross pendent/file_00000000f2a082108e6a99793e3bbfff.png',
-      '/nyxdripscreenshot/Double cross pendent/IMG_20261002_125433_250.jpg',
+      '/nyxdrip2.0/Ch pendent/file_000000008d208210a4fb4b6cb8b9613b.png',
+      '/nyxdripscreenshot/Ch pendent/Screenshot_20261002-124257.jpg',
     ],
     stock: 10,
     isNewArrival: true,
@@ -259,7 +260,8 @@ export const PRODUCTS: Product[] = [
     category: 'Pendants',
     description: 'Berserk Pendant from the NYx DRIPstore collection. Dark fantasy emblem hardware.',
     images: [
-      '/nyxdrip2.0/Bersek pendent/file_00000000669c82108310d8a5f6ca67a5.png',
+      '/nyxdrip2.0/Double cross pendent/file_00000000f2a082108e6a99793e3bbfff.png',
+      '/nyxdripscreenshot/Double cross pendent/IMG_20261002_125433_250.jpg',
     ],
     stock: 10,
     isNewArrival: true,

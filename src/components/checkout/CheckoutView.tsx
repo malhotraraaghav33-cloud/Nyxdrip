@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, Loader2, CreditCard, Smartphone, Building2, Wallet, Globe, MapPin, User, Mail, Lock, Phone } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, Loader2, CreditCard, Smartphone, Building2, Wallet, Globe, MapPin, User, Mail, Lock, Phone, MessageSquare } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useNavigation } from '../../context/NavigationContext';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +11,7 @@ import { validateCartStock } from '../../services/inventoryService';
 import { createOrderInDatabase } from '../../services/orderService';
 import { fetchUserAddresses, saveUserAddress, UserAddress } from '../../services/addressService';
 import { AccountModal } from '../account/AccountModal';
+import { buildWhatsAppOrderUrl } from '../../utils/whatsappOrder';
 
 // ============================================================================
 // PAYMENT INTEGRATION INTERFACE CONTRACT
@@ -895,22 +896,42 @@ export const CheckoutView: React.FC = () => {
               </div>
 
               {/* Place Order CTA */}
-              <Magnetic strength={10} className="w-full">
-                <button
-                  type="submit"
-                  disabled={orderState === 'Processing'}
-                  className="w-full py-4 bg-[#8B5CF6] hover:bg-[#7c4def] disabled:opacity-50 text-white text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 shadow-2xl transition-all active:scale-95"
+              <div className="space-y-2">
+                <Magnetic strength={10} className="w-full">
+                  <button
+                    type="submit"
+                    disabled={orderState === 'Processing'}
+                    className="w-full py-4 bg-[#8B5CF6] hover:bg-[#7c4def] disabled:opacity-50 text-white text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 shadow-2xl transition-all active:scale-95"
+                  >
+                    <span>Authorize & Complete Order (₹{finalTotal.toLocaleString('en-IN')})</span>
+                  </button>
+                </Magnetic>
+
+                <a
+                  href={buildWhatsAppOrderUrl({
+                    items,
+                    subtotal,
+                    discount,
+                    shipping: finalShipping,
+                    total: finalTotal,
+                    couponCode: appliedCoupon?.code,
+                    customer: formData,
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 bg-[#15151B] hover:bg-[#1f1f27] border border-[#2A2A32] hover:border-[#00D9FF] text-[#F5F5F7] text-[11px] font-bold tracking-wider uppercase flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
-                  <span>Authorize & Complete Order (₹{finalTotal.toLocaleString('en-IN')})</span>
-                </button>
-              </Magnetic>
+                  <MessageSquare size={13} className="text-[#00D9FF]" />
+                  <span>Send Order Inquiry to WhatsApp</span>
+                </a>
+              </div>
 
               <div className="space-y-1 text-center">
                 <p className="text-[11px] text-[#9A9AA3]">
                   🔒 256-Bit Bank Level Encryption · Nyxdrip Vault Protocol
                 </p>
                 <p className="text-[10px] text-[#9A9AA3]/60">
-                  By clicking complete, you agree to our Terms of Drop & Guarantee.
+                  By clicking complete, you agree to our Store Terms & Dispatch Policy.
                 </p>
               </div>
             </div>

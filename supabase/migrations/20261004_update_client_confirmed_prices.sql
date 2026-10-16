@@ -208,13 +208,13 @@ INSERT INTO public.products (
         '/nyxdrip/Y2k Devil Cap/IMG-20261002-WA0039.jpg'
     ]::TEXT[]
 ),
--- 8. CH Pendant — ₹169
+-- 8. CH Pendant — ₹149
 (
     'ch-pendant',
     'CH Pendant',
     'Pendants',
     'CH Pendant from the NYx DRIPstore collection. Sculpted gothic cross centerpiece.',
-    169.00,
+    149.00,
     NULL,
     false,
     NULL,
@@ -222,7 +222,8 @@ INSERT INTO public.products (
     true,
     true,
     ARRAY[
-        '/nyxdrip2.0/Ch pendent/file_000000008d208210a4fb4b6cb8b9613b.png'
+        '/nyxdrip2.0/Bersek pendent/file_00000000669c82108310d8a5f6ca67a5.png',
+        '/nyxdripscreenshot/bersek pendent/Screenshot_20261002-124228.jpg'
     ]::TEXT[]
 ),
 -- 9. Red Cross Pendant — ₹159
@@ -242,13 +243,13 @@ INSERT INTO public.products (
         '/nyxdrip2.0/red cross pendent/file_00000000ccc081f48693e3f5597033c2.png'
     ]::TEXT[]
 ),
--- 10. Double Cross Pendant — ₹149
+-- 10. Double Cross Pendant — ₹169
 (
     'double-cross-pendant',
     'Double Cross Pendant',
     'Pendants',
     'Double Cross Pendant from the NYx DRIPstore collection. Interlocking double cross motif.',
-    149.00,
+    169.00,
     NULL,
     false,
     NULL,
@@ -256,8 +257,8 @@ INSERT INTO public.products (
     true,
     true,
     ARRAY[
-        '/nyxdrip2.0/Double cross pendent/file_00000000f2a082108e6a99793e3bbfff.png',
-        '/nyxdripscreenshot/Double cross pendent/IMG_20261002_125433_250.jpg'
+        '/nyxdrip2.0/Ch pendent/file_000000008d208210a4fb4b6cb8b9613b.png',
+        '/nyxdripscreenshot/Ch pendent/Screenshot_20261002-124257.jpg'
     ]::TEXT[]
 ),
 -- 11. Berserk Pendant — ₹149
@@ -274,7 +275,8 @@ INSERT INTO public.products (
     true,
     true,
     ARRAY[
-        '/nyxdrip2.0/Bersek pendent/file_00000000669c82108310d8a5f6ca67a5.png'
+        '/nyxdrip2.0/Double cross pendent/file_00000000f2a082108e6a99793e3bbfff.png',
+        '/nyxdripscreenshot/Double cross pendent/IMG_20261002_125433_250.jpg'
     ]::TEXT[]
 ),
 -- 12. Blue Metallic Wallet — ₹449

@@ -32,7 +32,7 @@ export const BrandStatement: React.FC = () => {
           </p>
 
           <p className="mt-4 text-xs sm:text-sm text-[#9A9AA3] max-w-xl mx-auto leading-relaxed">
-            We reject disposable fast-fashion alloy plating. Every link, pendant, and ring is molded in corrosion-immune steel and sealed against the elements.
+            We reject disposable fast-fashion trends. Every piece is sculpted for bold self-expression, dark streetwear aesthetics, and enduring visual presence.
           </p>
 
           <div className="mt-10">

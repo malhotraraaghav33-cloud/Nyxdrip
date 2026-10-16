@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Truck, RefreshCw, ShieldCheck, ArrowLeft, ChevronDown, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { Star, Truck, ShieldCheck, ArrowLeft, ChevronDown, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
 import { PRODUCTS, SLUG_ALIASES } from '../../data/products';
 import { useNavigation } from '../../context/NavigationContext';
 import { useCart } from '../../context/CartContext';
@@ -364,7 +364,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
                     onClick={() => toggleAccordion('shipping')}
                     className="w-full py-3.5 flex items-center justify-between font-bold uppercase tracking-wider text-[#F5F5F7]"
                   >
-                    <span>Shipping & Hassle-Free Returns</span>
+                    <span>Shipping & Delivery Policy</span>
                     <ChevronDown
                       size={15}
                       className={`text-[#9A9AA3] transition-transform duration-200 ${
@@ -379,12 +379,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
                         <span>Dispatched within 24 hours. Delivered in 3-5 business days across India.</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <RefreshCw size={14} className="text-[#8B5CF6]" />
-                        <span>7-day replacement guarantee if size or finish doesn't match your fit.</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck size={14} className="text-[#C7CBD3]" />
-                        <span>Lifetime anti-tarnish guarantee against corrosion and rust.</span>
+                        <ShieldCheck size={14} className="text-[#8B5CF6]" />
+                        <span>Free Pan-India delivery on all orders above ₹999.</span>
                       </div>
                     </div>
                   )}

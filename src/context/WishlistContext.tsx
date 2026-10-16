@@ -125,7 +125,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                   tags: pData.tags || [],
                   style: pData.style as any,
                   color: 'Silver',
-                  materials: pData.materials || '316L Surgical Steel',
+                  materials: pData.materials || '',
                   careInstructions: pData.care_instructions || '',
                 };
               }

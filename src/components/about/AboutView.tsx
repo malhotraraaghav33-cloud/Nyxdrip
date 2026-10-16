@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, ShieldCheck, Flame, Compass } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Flame, Compass, Instagram, MessageSquare } from 'lucide-react';
 import { useNavigation } from '../../context/NavigationContext';
 import { ScrollReveal } from '../common/ScrollReveal';
 import { Magnetic } from '../common/Magnetic';
@@ -46,23 +46,23 @@ export const AboutView: React.FC = () => {
                 <span>THE ARCHITECTURAL CORE</span>
               </div>
               <h2 className="font-display text-2xl sm:text-3xl font-bold uppercase text-[#F5F5F7]">
-                SURGICAL ALLOYS OVER DISPOSABLE FASHION.
+                BOLD SILHOUETTES OVER DISPOSABLE FASHION.
               </h2>
               <p className="text-xs sm:text-sm text-[#9A9AA3] leading-relaxed">
-                Every cross, link, and spike band in our catalog is engineered from solid 316L surgical steel, high-density titanium composites, or solid sterling silver. We reject cheap zinc alloy die-casting that turns green within weeks.
+                Every cross, link, and statement band in our catalog is sculpted to make an uncompromising visual impact. We focus on dark cyber brutalism, sharp gothic edges, and tangible presence that elevates your everyday streetwear fits.
               </p>
               <p className="text-xs sm:text-sm text-[#9A9AA3] leading-relaxed">
-                Our triple-vacuum PVD chrome immersion process bonds atom-thin titanium-nitride coats that are completely hypoallergenic, sweat-proof, and tarnish-resistant for life.
+                Each archive drop is carefully curated to empower individual expression, turning contemporary accessories into wearable statements.
               </p>
 
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#2A2A32]">
                 <div>
-                  <p className="font-mono-numbers text-xl font-bold text-[#F5F5F7]">0%</p>
-                  <p className="text-xs text-[#9A9AA3] mt-0.5">Nickel / Harmful Toxins</p>
+                  <p className="font-mono-numbers text-xl font-bold text-[#F5F5F7]">₹999+</p>
+                  <p className="text-xs text-[#9A9AA3] mt-0.5">Free Pan-India Delivery</p>
                 </div>
                 <div>
-                  <p className="font-mono-numbers text-xl font-bold text-[#8B5CF6]">316L</p>
-                  <p className="text-xs text-[#9A9AA3] mt-0.5">Medical-Grade Steel</p>
+                  <p className="font-mono-numbers text-xl font-bold text-[#8B5CF6]">100%</p>
+                  <p className="text-xs text-[#9A9AA3] mt-0.5">Original Street Aesthetics</p>
                 </div>
               </div>
             </div>
@@ -98,10 +98,10 @@ export const AboutView: React.FC = () => {
                   <ShieldCheck size={20} />
                 </div>
                 <h4 className="font-display text-base font-bold text-[#F5F5F7] uppercase">
-                  Forever Tarnish-Proof
+                  Brutalist Sculpting
                 </h4>
                 <p className="text-xs text-[#9A9AA3] leading-relaxed">
-                  Built to withstand swimming, workouts, humidity, and constant daily wear without discoloration or skin irritation.
+                  Engineered with intricate dimensional detailing, weighted hardware presence, and striking cyber-gothic silhouettes.
                 </p>
               </div>
             </ScrollReveal>
@@ -121,6 +121,43 @@ export const AboutView: React.FC = () => {
             </ScrollReveal>
           </div>
         </div>
+
+        {/* Direct Community & Contact Links */}
+        <ScrollReveal animation="fade-up" delay={50}>
+          <div className="mt-16 p-6 sm:p-8 bg-[#15151B] border border-[#2A2A32] grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase tracking-widest text-[#00D9FF] font-semibold">
+                DIRECT COMMUNITY CHANNELS
+              </span>
+              <h3 className="font-display text-lg font-bold uppercase text-[#F5F5F7]">
+                CONNECT WITH NYXDRIP
+              </h3>
+              <p className="text-xs text-[#9A9AA3]">
+                Follow our official visual archive or chat directly with our team.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start lg:justify-end gap-3">
+              <a
+                href="https://www.instagram.com/nyxdrip.store?mdxt=YmhiY21xeGZhd2Fn"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-3 bg-[#0A0A0D] border border-[#2A2A32] hover:border-[#8B5CF6] text-[#F5F5F7] hover:text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 transition-colors"
+              >
+                <Instagram size={15} className="text-[#8B5CF6]" />
+                <span>Instagram @nyxdrip.store</span>
+              </a>
+              <a
+                href="https://wa.me/919354129232"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-3 bg-[#0A0A0D] border border-[#2A2A32] hover:border-[#00D9FF] text-[#F5F5F7] hover:text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 transition-colors"
+              >
+                <MessageSquare size={15} className="text-[#00D9FF]" />
+                <span>WhatsApp: +91 93541 29232</span>
+              </a>
+            </div>
+          </div>
+        </ScrollReveal>
 
         {/* CTA */}
         <ScrollReveal animation="scale-in" delay={100}>

@@ -87,6 +87,7 @@ export const AdminView: React.FC = () => {
   }, [isAdmin]);
 
   const handleUpdateStock = async (productId: string, qty: number) => {
+    if (!isAdmin) return;
     if (!isSupabaseConfigured) {
       setProductsList((prev) =>
         prev.map((p) => (p.id === productId ? { ...p, stock: qty } : p))
@@ -122,6 +123,7 @@ export const AdminView: React.FC = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    if (!isAdmin) return;
     if (!isSupabaseConfigured) {
       setOrdersList((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, order_status: status } : o))
@@ -149,6 +151,7 @@ export const AdminView: React.FC = () => {
 
   const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) return;
     if (!newCode.trim()) return;
 
     const payload = {

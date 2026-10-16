@@ -160,17 +160,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [subtotal, appliedCoupon]);
 
   const shipping = useMemo(() => {
-    if (subtotal === 0) return 0;
+    if (items.length === 0 || subtotal === 0) return 0;
     return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
-  }, [subtotal]);
+  }, [items.length, subtotal]);
 
   const total = useMemo(() => {
+    if (items.length === 0 || subtotal === 0) return 0;
     return Math.max(0, subtotal - discount + shipping);
-  }, [subtotal, discount, shipping]);
+  }, [items.length, subtotal, discount, shipping]);
 
   const amountNeededForFreeShipping = useMemo(() => {
+    if (items.length === 0 || subtotal === 0) return FREE_SHIPPING_THRESHOLD;
     return Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
-  }, [subtotal]);
+  }, [items.length, subtotal]);
 
   // ============================================================================
   // GUEST CROSS-TAB STORAGE SYNCHRONIZATION

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, Sparkles, Video as VideoIcon } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { useNavigation } from '../../context/NavigationContext';
 import { Magnetic } from '../common/Magnetic';
-import { getCustomHeroVideo, saveCustomHeroVideo, clearCustomHeroVideo } from '../../lib/videoStorage';
 
 const DEFAULT_VIDEO = '/assets/hero-product-video.mp4';
 const DEFAULT_POSTER = '/assets/hero-product-video-poster.jpg';
@@ -11,7 +10,6 @@ export const Hero: React.FC = () => {
   const { navigateTo } = useNavigation();
   const heroRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isDataSaver, setIsDataSaver] = useState(false);
@@ -20,46 +18,6 @@ export const Hero: React.FC = () => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [isHeroInView, setIsHeroInView] = useState(true);
   const [scrollY, setScrollY] = useState(0);
-
-  const [videoSrc, setVideoSrc] = useState<string>(DEFAULT_VIDEO);
-  const [isCustomVideo, setIsCustomVideo] = useState<boolean>(false);
-
-  // Load custom video if previously saved in IndexedDB
-  useEffect(() => {
-    getCustomHeroVideo().then((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        setVideoSrc(url);
-        setIsCustomVideo(true);
-      }
-    });
-  }, []);
-
-  const handleVideoFile = async (file: File) => {
-    if (!file || !file.type.startsWith('video/')) return;
-    await saveCustomHeroVideo(file);
-    const url = URL.createObjectURL(file);
-    setVideoSrc(url);
-    setIsCustomVideo(true);
-    setVideoLoaded(false);
-    setVideoError(false);
-  };
-
-  const handleResetVideo = async () => {
-    await clearCustomHeroVideo();
-    setVideoSrc(DEFAULT_VIDEO);
-    setIsCustomVideo(false);
-    setVideoLoaded(false);
-    setVideoError(false);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLElement>) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('video/')) {
-      handleVideoFile(file);
-    }
-  };
 
   // 1. Reduced motion & Data-saver detection
   useEffect(() => {
@@ -108,7 +66,7 @@ export const Hero: React.FC = () => {
         });
       }
     }
-  }, [prefersReducedMotion, isDataSaver, isHeroInView, videoSrc]);
+  }, [prefersReducedMotion, isDataSaver, isHeroInView]);
 
   // 3. Pause video when hero is off-screen using IntersectionObserver to save CPU/battery
   useEffect(() => {
@@ -157,8 +115,6 @@ export const Hero: React.FC = () => {
   return (
     <section
       ref={heroRef}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDrop}
       className="relative min-h-[85svh] sm:min-h-screen landscape:min-h-[90svh] landscape:sm:min-h-screen w-full max-w-[100vw] flex items-center justify-center overflow-hidden [isolation:isolate] bg-[#0A0A0D] pt-14 pb-10 sm:py-16 lg:py-20 landscape:py-8 landscape:sm:py-12"
     >
       {/* ====================================================================
@@ -184,7 +140,6 @@ export const Hero: React.FC = () => {
         {!prefersReducedMotion && !isDataSaver && (
           <video
             ref={videoRef}
-            key={videoSrc}
             autoPlay
             loop
             muted
@@ -201,7 +156,7 @@ export const Hero: React.FC = () => {
               videoLoaded && !videoError ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            <source src={videoSrc} type="video/mp4" />
+            <source src={DEFAULT_VIDEO} type="video/mp4" />
           </video>
         )}
       </div>
@@ -219,39 +174,6 @@ export const Hero: React.FC = () => {
 
         {/* Seamless bottom fade: blends 100% into #0A0A0D page background */}
         <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-[#0A0A0D] via-[#0A0A0D]/80 to-transparent" />
-      </div>
-
-      {/* Discreet custom video upload control */}
-      <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-20 flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="video/mp4,video/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleVideoFile(file);
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="text-[9px] sm:text-[10px] uppercase tracking-wider font-mono text-[#C7CBD3] bg-[#0A0A0D]/80 hover:bg-[#15151B] border border-[#2A2A32] px-2 sm:px-2.5 py-1 rounded transition-colors flex items-center gap-1.5 backdrop-blur-sm shadow-sm"
-          title="Upload or change background video (e.g. 1000110026_horizontal_no_sound.mp4)"
-        >
-          <VideoIcon size={12} className="text-[#00D9FF]" />
-          <span>{isCustomVideo ? 'Custom Video Active' : 'Change Video'}</span>
-        </button>
-        {isCustomVideo && (
-          <button
-            type="button"
-            onClick={handleResetVideo}
-            className="text-[9px] sm:text-[10px] uppercase tracking-wider font-mono text-[#9A9AA3] hover:text-red-400 bg-[#0A0A0D]/80 hover:bg-[#15151B] border border-[#2A2A32] px-2 py-1 rounded transition-colors backdrop-blur-sm"
-            title="Reset to default video"
-          >
-            Reset
-          </button>
-        )}
       </div>
 
       {/* ====================================================================
@@ -339,16 +261,16 @@ export const Hero: React.FC = () => {
           }`}
         >
           <div>
-            <p className="font-mono-numbers text-xs sm:text-sm md:text-base font-bold text-[#F5F5F7]">316L</p>
-            <p className="text-[9px] sm:text-[10px] md:text-[11px] text-[#9A9AA3] uppercase tracking-wider mt-0.5 line-clamp-1">Surgical Steel</p>
+            <p className="font-mono-numbers text-xs sm:text-sm md:text-base font-bold text-[#F5F5F7]">DARKWEAR</p>
+            <p className="text-[9px] sm:text-[10px] md:text-[11px] text-[#9A9AA3] uppercase tracking-wider mt-0.5 line-clamp-1">Gothic Aesthetics</p>
           </div>
           <div>
-            <p className="font-mono-numbers text-xs sm:text-sm md:text-base font-bold text-[#F5F5F7]">100%</p>
-            <p className="text-[9px] sm:text-[10px] md:text-[11px] text-[#9A9AA3] uppercase tracking-wider mt-0.5 line-clamp-1">Tarnish Proof</p>
+            <p className="font-mono-numbers text-xs sm:text-sm md:text-base font-bold text-[#F5F5F7]">CURATED</p>
+            <p className="text-[9px] sm:text-[10px] md:text-[11px] text-[#9A9AA3] uppercase tracking-wider mt-0.5 line-clamp-1">Micro Drops</p>
           </div>
           <div>
-            <p className="font-mono-numbers text-xs sm:text-sm md:text-base font-bold text-[#00D9FF]">FREE</p>
-            <p className="text-[9px] sm:text-[10px] md:text-[11px] text-[#9A9AA3] uppercase tracking-wider mt-0.5 line-clamp-1">Pan-India Delivery</p>
+            <p className="font-mono-numbers text-xs sm:text-sm md:text-base font-bold text-[#00D9FF]">₹999+</p>
+            <p className="text-[9px] sm:text-[10px] md:text-[11px] text-[#9A9AA3] uppercase tracking-wider mt-0.5 line-clamp-1">Free Pan-India Delivery</p>
           </div>
         </div>
       </div>

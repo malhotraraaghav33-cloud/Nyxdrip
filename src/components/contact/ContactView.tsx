@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, MessageSquare, ChevronDown, CheckCircle2, Clock, MapPin } from 'lucide-react';
+import { Mail, MessageSquare, ChevronDown, CheckCircle2, Clock, MapPin, Instagram } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { ScrollReveal } from '../common/ScrollReveal';
 import { Magnetic } from '../common/Magnetic';
@@ -25,20 +25,20 @@ export const ContactView: React.FC = () => {
 
   const faqs = [
     {
-      q: 'Will Nyxdrip jewelry tarnish or turn green?',
-      a: 'Never. We fabricate strictly from 316L medical-grade stainless steel, solid titanium, and 925 sterling silver plated with mirror rhodium and PVD chrome. You can shower, swim, and sweat with zero oxidation or skin greening.',
+      q: 'Do you offer free delivery across India?',
+      a: 'Yes, we provide free Pan-India delivery on all qualifying orders above ₹999.',
     },
     {
       q: 'How long does Pan-India delivery take?',
-      a: 'All orders are securely packaged and dispatched within 24 hours. Metros (Mumbai, Delhi, Bengaluru) receive delivery in 2-3 business days. All other Indian cities take 3-5 business days. You will receive an SMS and email with live Bluedart / Delhivery tracking links.',
+      a: 'All orders are securely packaged and dispatched within 24 hours. Metros (Mumbai, Delhi, Bengaluru) receive delivery in 2-3 business days. All other Indian cities take 3-5 business days. You will receive tracking details once dispatched.',
     },
     {
       q: 'How do I choose the correct ring or bracelet size?',
-      a: 'We use standard US ring sizing (US 7 to US 12). If you do not know your size, wrap a narrow strip of paper snugly around your knuckle, mark the overlap point, and measure against a millimeter ruler. Our cuff bracelets and necklaces also specify millimeter lengths in the product specifications.',
+      a: 'We use standard sizing. If you do not know your size, wrap a narrow strip of paper snugly around your finger or knuckle, mark the overlap point, and measure against a millimeter ruler. Necklaces and cuffs specify millimeter lengths in their product descriptions.',
     },
     {
       q: 'What is your return & exchange policy?',
-      a: 'We offer a 7-day hassle-free size replacement policy from the date of doorstep delivery. If a piece does not fit your aesthetic or finger, simply email support@nyxdripstore.com for an instant prepaid exchange pickup.',
+      a: 'Return and exchange requests are reviewed on a case-by-case basis by store management. For questions regarding fit, sizing, or pieces, please contact our team directly via WhatsApp at +91 93541 29232 or email support@nyxdripstore.com. (Return policy is subject to owner review).',
     },
   ];
 
@@ -128,7 +128,7 @@ export const ContactView: React.FC = () => {
                       >
                         <option value="Order Tracking">Order Tracking & Dispatch Inquiry</option>
                         <option value="Size Consultation">Ring or Chain Sizing Consultation</option>
-                        <option value="Product Care">Warranty & Anti-Tarnish Guarantee</option>
+                        <option value="Product Care">Product Care & Inquiry</option>
                         <option value="Brand Collaboration">Creator & Model Collaboration</option>
                         <option value="Wholesale">Wholesale & Archive Inquiries</option>
                       </select>
@@ -178,13 +178,31 @@ export const ContactView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <MessageSquare size={16} className="text-[#00D9FF] shrink-0 mt-0.5" />
+                  <a
+                    href="https://wa.me/919354129232"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 group hover:text-white transition-colors"
+                  >
+                    <MessageSquare size={16} className="text-[#00D9FF] shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                     <div>
-                      <p className="font-semibold text-[#F5F5F7]">WhatsApp Concierge</p>
-                      <p className="text-[#9A9AA3]">+91 91364 88209 (Chat Only)</p>
+                      <p className="font-semibold text-[#F5F5F7] group-hover:text-[#00D9FF] transition-colors">WhatsApp Concierge</p>
+                      <p className="text-[#9A9AA3]">+91 93541 29232 (Click to Chat)</p>
                     </div>
-                  </div>
+                  </a>
+
+                  <a
+                    href="https://www.instagram.com/nyxdrip.store?mdxt=YmhiY21xeGZhd2Fn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 group hover:text-white transition-colors"
+                  >
+                    <Instagram size={16} className="text-[#8B5CF6] shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="font-semibold text-[#F5F5F7] group-hover:text-[#8B5CF6] transition-colors">Official Instagram</p>
+                      <p className="text-[#9A9AA3]">@nyxdrip.store</p>
+                    </div>
+                  </a>
 
                   <div className="flex items-start gap-3">
                     <Clock size={16} className="text-[#C7CBD3] shrink-0 mt-0.5" />
@@ -204,13 +222,13 @@ export const ContactView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick Sizing & Guarantee Note */}
+              {/* Sizing & Inquiries Note */}
               <div className="p-6 bg-[#15151B] border border-[#2A2A32] mt-6">
                 <h4 className="font-display text-sm font-bold uppercase text-[#00D9FF] mb-2">
-                  EXCHANGE PROMISE
+                  SIZING & SUPPORT CONCIERGE
                 </h4>
                 <p className="text-xs text-[#9A9AA3] leading-relaxed">
-                  If the ring size you ordered is slightly tight or loose, we dispatch your replacement size free of charge with prepaid reverse pickup.
+                  Have questions about chain dimensions, ring measurements, or piece availability? Reach out via WhatsApp or email for direct operator assistance.
                 </p>
               </div>
             </ScrollReveal>
