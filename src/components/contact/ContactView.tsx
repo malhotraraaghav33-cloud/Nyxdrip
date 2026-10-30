@@ -33,8 +33,8 @@ export const ContactView: React.FC = () => {
       a: 'All orders are securely packaged and dispatched within 24 hours. Metros (Mumbai, Delhi, Bengaluru) receive delivery in 2-3 business days. All other Indian cities take 3-5 business days. You will receive tracking details once dispatched.',
     },
     {
-      q: 'How do I choose the correct ring or bracelet size?',
-      a: 'We use standard sizing. If you do not know your size, wrap a narrow strip of paper snugly around your finger or knuckle, mark the overlap point, and measure against a millimeter ruler. Necklaces and cuffs specify millimeter lengths in their product descriptions.',
+      q: 'How do I choose the correct chain or bracelet size?',
+      a: 'We specify millimeter lengths and wrist circumference in every product description. If you are unsure about the drape or fit of a piece, our support concierge is available via WhatsApp for direct assistance.',
     },
     {
       q: 'What is your return & exchange policy?',
@@ -127,7 +127,7 @@ export const ContactView: React.FC = () => {
                         className="w-full bg-[#0A0A0D] border border-[#2A2A32] px-3.5 py-2.5 text-xs text-[#F5F5F7] focus:outline-none focus:border-[#8B5CF6]"
                       >
                         <option value="Order Tracking">Order Tracking & Dispatch Inquiry</option>
-                        <option value="Size Consultation">Ring or Chain Sizing Consultation</option>
+                        <option value="Size Consultation">Chain or Bracelet Sizing Consultation</option>
                         <option value="Product Care">Product Care & Inquiry</option>
                         <option value="Brand Collaboration">Creator & Model Collaboration</option>
                         <option value="Wholesale">Wholesale & Archive Inquiries</option>
@@ -228,7 +228,7 @@ export const ContactView: React.FC = () => {
                   SIZING & SUPPORT CONCIERGE
                 </h4>
                 <p className="text-xs text-[#9A9AA3] leading-relaxed">
-                  Have questions about chain dimensions, ring measurements, or piece availability? Reach out via WhatsApp or email for direct operator assistance.
+                  Have questions about chain dimensions, bracelet measurements, or piece availability? Reach out via WhatsApp or email for direct operator assistance.
                 </p>
               </div>
             </ScrollReveal>

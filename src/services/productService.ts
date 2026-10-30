@@ -141,14 +141,16 @@ export const fetchCategories = async () => {
       return CATEGORIES_DATA;
     }
 
-    return data.map((c) => ({
-      name: c.name,
-      slug: c.slug,
-      image: c.image_url || CATEGORIES_DATA.find((x) => x.slug === c.slug)?.image || '/assets/products/placeholder.svg',
-      description: c.description || '',
-      count: c.count || 1,
-    }));
+    return data
+      .filter((c) => !['ring', 'rings'].includes((c.name || '').toLowerCase()) && !['ring', 'rings'].includes((c.slug || '').toLowerCase()))
+      .map((c) => ({
+        name: c.name,
+        slug: c.slug,
+        image: c.image_url || CATEGORIES_DATA.find((x) => x.slug === c.slug)?.image || '/assets/products/placeholder.svg',
+        description: c.description || '',
+        count: c.count || 1,
+      }));
   } catch {
-    return CATEGORIES_DATA;
+    return CATEGORIES_DATA.filter((c) => !['ring', 'rings'].includes(c.name.toLowerCase()));
   }
 };

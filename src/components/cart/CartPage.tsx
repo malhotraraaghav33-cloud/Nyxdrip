@@ -90,7 +90,7 @@ export const CartPage: React.FC = () => {
               YOUR BAG IS CURRENTLY EMPTY
             </h3>
             <p className="text-xs text-[#9A9AA3] mt-2 max-w-sm mx-auto">
-              Ready to gear up? Explore our chrome cross pendants, spiked cuffs, and gothic rings.
+              Ready to gear up? Explore our chrome cross pendants, spiked cuffs, and heavy chains.
             </p>
             <div className="mt-6 flex justify-center">
               <Magnetic strength={12}>

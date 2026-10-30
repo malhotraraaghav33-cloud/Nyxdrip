@@ -972,7 +972,7 @@ export const AccountView: React.FC = () => {
                         No orders recorded yet
                       </h4>
                       <p className="text-xs text-[#9A9AA3] max-w-sm mx-auto">
-                        Your hardware collection has not commenced. Explore our cyber crosses, Cuban links, and signet rings.
+                        Your hardware collection has not commenced. Explore our cyber crosses, Cuban links, and industrial chains.
                       </p>
                       <button
                         type="button"
@@ -1277,7 +1277,7 @@ export const AccountView: React.FC = () => {
                         Your wishlist is empty
                       </h4>
                       <p className="text-xs text-[#9A9AA3] max-w-sm mx-auto">
-                        Save chrome pendants, rings, and chains for instant access whenever new drop releases arrive.
+                        Save chrome pendants, bracelets, and chains for instant access whenever new drop releases arrive.
                       </p>
                       <button
                         type="button"

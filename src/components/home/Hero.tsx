@@ -222,7 +222,7 @@ export const Hero: React.FC = () => {
             isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          Y2K chrome pendants, heavy industrial bracelets, cyber rings, and dark streetwear hardware crafted from surgical-grade alloys.
+          Y2K chrome pendants, heavy industrial bracelets, and dark streetwear hardware sculpted with brutalist aesthetics.
         </p>
 
         {/* CTAs with Magnetic Buttons on Desktop, portrait-friendly full-width stack on mobile */}

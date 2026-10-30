@@ -151,7 +151,7 @@ export const OrderConfirmationView: React.FC = () => {
                 Estimated: {order?.estimatedDelivery || 'In 3-4 Business Days'}
               </p>
               <p className="mt-1">
-                Method: {order?.deliveryMethod === 'express' ? 'Priority Air' : 'Standard Ground'}
+                Method: Standard Ground Tracked
               </p>
               <p className="mt-1 font-mono-numbers">Payment Status: {order?.status || 'Paid'}</p>
             </div>
@@ -236,7 +236,7 @@ export const OrderConfirmationView: React.FC = () => {
                   3
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-[#F5F5F7]">Dispatched via Priority Air Vault</p>
+                  <p className="text-xs font-bold text-[#F5F5F7]">Dispatched via Standard Tracked Courier</p>
                   <p className="text-[11px] text-[#9A9AA3]">Scheduled within 24 hours</p>
                 </div>
               </div>

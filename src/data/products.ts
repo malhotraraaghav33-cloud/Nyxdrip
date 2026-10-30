@@ -69,9 +69,9 @@ export const CATEGORIES_DATA = [
   {
     name: 'Accessories',
     slug: 'accessories',
-    image: '/nyxdrip/Y2k Glass/y2k-glass.jpg',
+    image: '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.37.28_PM_ec535360.jpeg',
     description: 'Futuristic Y2K shades and signature cyber eyewear accessories.',
-    count: 1,
+    count: 3,
   },
 ];
 
@@ -83,6 +83,8 @@ export const SLUG_ALIASES: Record<string, string> = {
   'ch-bracelet-1-0': 'ch-bracelet',
   'y2k-devil-cap': 'y2k-cap',
   'bersek-pendant': 'berserk-pendant',
+  'angel-creed-necklace': 'angled-creed-necklace',
+  'angle-creed-necklace': 'angled-creed-necklace',
 };
 
 export const PRODUCTS: Product[] = [
@@ -113,6 +115,7 @@ export const PRODUCTS: Product[] = [
     style: 'Y2K',
     description: 'Y2K Glass from the NYx DRIPstore collection. Futuristic cyber aesthetic eyewear accessory.',
     images: [
+      '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.37.28_PM_ec535360.jpeg',
       '/nyxdrip/Y2k Glass/y2k-glass.jpg',
     ],
     stock: 10,
@@ -136,14 +139,14 @@ export const PRODUCTS: Product[] = [
     isNewArrival: true,
   },
 
-  // 4. Angel Creed Necklace — ₹399
+  // 4. Angled Creed Necklace — ₹399
   {
-    id: 'prod-angel-creed-necklace',
-    slug: 'angel-creed-necklace',
-    name: 'Angel Creed Necklace',
+    id: 'prod-angled-creed-necklace',
+    slug: 'angled-creed-necklace',
+    name: 'Angled Creed Necklace',
     price: 399,
     category: 'Necklaces',
-    description: 'Angel Creed Necklace from the NYx DRIPstore collection. Sculpted gothic wing and cross insignia.',
+    description: 'Angled Creed Necklace from the NYx DRIPstore collection. Sculpted gothic wing and cross insignia.',
     images: [
       '/nyxdrip/Angle creed necklace/IMG-20261002-WA0008.jpg',
       '/nyxdrip/Angle creed necklace/IMG-20261002-WA0013.jpg',
@@ -329,6 +332,40 @@ export const PRODUCTS: Product[] = [
     description: 'Snake Cross Necklace from the NYx DRIPstore collection. Serpentine chrome cross entwined chain.',
     images: [
       '/nyxdrip2.0/Snake cross nekclace/IMG_20261002_125440_660.jpg',
+    ],
+    stock: 10,
+    isNewArrival: true,
+  },
+
+  // 16. Chrome Earbuds (C Type) — ₹499
+  {
+    id: 'prod-chrome-earbuds-c-type',
+    slug: 'chrome-earbuds-c-type',
+    name: 'Chrome Earbuds (C Type)',
+    price: 499,
+    category: 'Accessories',
+    style: 'Y2K',
+    description: 'Chrome Earbuds (C Type) from the NYx DRIPstore collection. Heavy chrome finished wired earphones with USB Type-C interface.',
+    images: [
+      '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.24.39_PM_db92a737.jpeg',
+      '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.24.37_PM_b310b39e.jpeg',
+    ],
+    stock: 10,
+    isNewArrival: true,
+  },
+
+  // 17. Chrome Silver Rimless Glass — ₹599
+  {
+    id: 'prod-chrome-silver-rimless-glass',
+    slug: 'chrome-silver-rimless-glass',
+    name: 'Chrome Silver Rimless Glass',
+    price: 599,
+    category: 'Accessories',
+    style: 'Y2K',
+    description: 'Chrome Silver Rimless Glass from the NYx DRIPstore collection. Sleek rimless cyber shades with sculptural metallic temples.',
+    images: [
+      '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.25.27_PM_fd4c30d4.jpeg',
+      '/assets/aistudio/Screenshot_2026-10-30_180247_6b8d3fa6.png',
     ],
     stock: 10,
     isNewArrival: true,

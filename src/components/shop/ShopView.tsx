@@ -59,12 +59,18 @@ export const ShopView: React.FC = () => {
   };
 
   const availableCategories = useMemo(() => {
-    return Array.from(new Set(products.map((p) => p.category))).filter(Boolean);
+    return Array.from(new Set(products.map((p) => p.category)))
+      .filter((c) => Boolean(c) && !['ring', 'rings'].includes(c.toLowerCase()));
   }, [products]);
 
   // Filter products
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      // Hide Ring category products from customer storefront
+      if (['ring', 'rings'].includes(product.category.toLowerCase())) {
+        return false;
+      }
+
       // Search query
       if (filters.searchQuery.trim()) {
         const query = filters.searchQuery.toLowerCase();

@@ -10,7 +10,11 @@ export const FeaturedSection: React.FC = () => {
   const { products } = useProducts();
   const [activeTab, setActiveTab] = useState<'all' | 'bestsellers' | 'new'>('all');
 
-  const filteredProducts = products.filter((p) => {
+  const storefrontProducts = products.filter(
+    (p) => !['ring', 'rings'].includes(p.category.toLowerCase())
+  );
+
+  const filteredProducts = storefrontProducts.filter((p) => {
     if (activeTab === 'bestsellers') return p.isBestSeller;
     if (activeTab === 'new') return p.isNewArrival;
     return true;
@@ -18,7 +22,7 @@ export const FeaturedSection: React.FC = () => {
 
   const displayProducts = filteredProducts.length > 0
     ? filteredProducts.slice(0, 8)
-    : products.slice(0, 8);
+    : storefrontProducts.slice(0, 8);
 
   return (
     <section className="py-20 bg-[#0A0A0D] border-b border-[#2A2A32]">

@@ -3,71 +3,42 @@ import { ArrowRight, ShieldCheck, Flame, Compass, Instagram, MessageSquare } fro
 import { useNavigation } from '../../context/NavigationContext';
 import { ScrollReveal } from '../common/ScrollReveal';
 import { Magnetic } from '../common/Magnetic';
-import heroImg from '../../assets/images/hero_gothic_accessories_1790341134351.jpg';
 
 export const AboutView: React.FC = () => {
   const { navigateTo } = useNavigation();
 
   return (
-    <div className="min-h-screen bg-[#0A0A0D] text-[#F5F5F7] py-16 sm:py-24">
+    <div className="min-h-screen bg-[#0A0A0D] text-[#F5F5F7] py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Hero Banner */}
+        {/* Architectural Core Section - Starting cleanly at the top */}
         <ScrollReveal animation="fade-up">
-          <div className="max-w-3xl">
-            <span className="text-xs uppercase tracking-[0.3em] text-[#8B5CF6] font-semibold">
-              ORIGIN MANIFESTO
-            </span>
-            <h1 className="font-display text-4xl sm:text-6xl font-black uppercase tracking-tight mt-2 text-balance">
-              BORN IN THE SHADOWS OF STREET CULTURE.
+          <div className="max-w-4xl space-y-6">
+            <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-[#00D9FF] font-semibold">
+              <Compass size={16} />
+              <span>THE ARCHITECTURAL CORE</span>
+            </div>
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black uppercase text-[#F5F5F7] tracking-tight">
+              BOLD SILHOUETTES OVER DISPOSABLE FASHION.
             </h1>
-            <p className="mt-6 text-sm sm:text-base text-[#9A9AA3] leading-relaxed">
-              Nyxdripstore was founded on a singular conviction: contemporary jewelry had become docile, fragile, and uninspired. We sculpt hardware for those who operate after midnight — fusing the rebellious spirit of early-2000s cyber culture, raw gothic brutalism, and uncompromising metallurgic craftsmanship.
+            <p className="text-sm sm:text-base text-[#9A9AA3] leading-relaxed">
+              Every cross, link, and statement band in our catalog is sculpted to make an uncompromising visual impact. We focus on dark cyber brutalism, sharp gothic edges, and tangible presence that elevates your everyday streetwear fits.
             </p>
+            <p className="text-sm sm:text-base text-[#9A9AA3] leading-relaxed">
+              Each archive drop is carefully curated to empower individual expression, turning contemporary accessories into wearable statements.
+            </p>
+
+            <div className="grid grid-cols-2 gap-6 pt-6 border-t border-[#2A2A32] max-w-md">
+              <div>
+                <p className="font-mono-numbers text-2xl font-bold text-[#F5F5F7]">₹999+</p>
+                <p className="text-xs text-[#9A9AA3] mt-0.5">Free Pan-India Delivery</p>
+              </div>
+              <div>
+                <p className="font-mono-numbers text-2xl font-bold text-[#8B5CF6]">100%</p>
+                <p className="text-xs text-[#9A9AA3] mt-0.5">Original Street Aesthetics</p>
+              </div>
+            </div>
           </div>
         </ScrollReveal>
-
-        {/* Cinematic Split Layout */}
-        <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center">
-          <ScrollReveal animation="slide-right" delay={100}>
-            <div className="aspect-[4/3] bg-[#15151B] border border-[#2A2A32] overflow-hidden group">
-              <img
-                src={heroImg}
-                alt="Nyxdrip Metal Workshop"
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover filter brightness-75 group-hover:scale-105 transition-transform duration-700"
-              />
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal animation="slide-left" delay={150}>
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-[#00D9FF] font-semibold">
-                <Compass size={16} />
-                <span>THE ARCHITECTURAL CORE</span>
-              </div>
-              <h2 className="font-display text-2xl sm:text-3xl font-bold uppercase text-[#F5F5F7]">
-                BOLD SILHOUETTES OVER DISPOSABLE FASHION.
-              </h2>
-              <p className="text-xs sm:text-sm text-[#9A9AA3] leading-relaxed">
-                Every cross, link, and statement band in our catalog is sculpted to make an uncompromising visual impact. We focus on dark cyber brutalism, sharp gothic edges, and tangible presence that elevates your everyday streetwear fits.
-              </p>
-              <p className="text-xs sm:text-sm text-[#9A9AA3] leading-relaxed">
-                Each archive drop is carefully curated to empower individual expression, turning contemporary accessories into wearable statements.
-              </p>
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#2A2A32]">
-                <div>
-                  <p className="font-mono-numbers text-xl font-bold text-[#F5F5F7]">₹999+</p>
-                  <p className="text-xs text-[#9A9AA3] mt-0.5">Free Pan-India Delivery</p>
-                </div>
-                <div>
-                  <p className="font-mono-numbers text-xl font-bold text-[#8B5CF6]">100%</p>
-                  <p className="text-xs text-[#9A9AA3] mt-0.5">Original Street Aesthetics</p>
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
 
         {/* Pillars */}
         <div className="mt-24 pt-16 border-t border-[#2A2A32]">

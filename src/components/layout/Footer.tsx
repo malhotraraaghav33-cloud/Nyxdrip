@@ -64,14 +64,6 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <button
-                  onClick={() => navigateTo('shop', { category: 'Rings' })}
-                  className="hover:text-[#F5F5F7] transition-colors"
-                >
-                  Rings
-                </button>
-              </li>
-              <li>
-                <button
                   onClick={() => navigateTo('shop', { category: 'Wallets' })}
                   className="hover:text-[#F5F5F7] transition-colors"
                 >
@@ -122,7 +114,7 @@ export const Footer: React.FC = () => {
                   onClick={() => navigateTo('contact')}
                   className="hover:text-[#F5F5F7] transition-colors"
                 >
-                  Ring Sizing Chart
+                  Sizing Guide
                 </button>
               </li>
               <li>

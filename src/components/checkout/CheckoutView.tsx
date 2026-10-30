@@ -578,15 +578,8 @@ export const CheckoutView: React.FC = () => {
                 3. Delivery Method
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label
-                  onClick={() => setDeliveryMethod('standard')}
-                  className={`p-4 border cursor-pointer flex flex-col justify-between transition-all ${
-                    deliveryMethod === 'standard'
-                      ? 'bg-[#0A0A0D] border-[#8B5CF6]'
-                      : 'bg-[#15151B] border-[#2A2A32] hover:border-[#C7CBD3]/40'
-                  }`}
-                >
+              <div>
+                <div className="p-4 border bg-[#0A0A0D] border-[#8B5CF6] flex flex-col justify-between transition-all">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase text-[#F5F5F7]">
                       Standard Ground Tracked
@@ -598,28 +591,7 @@ export const CheckoutView: React.FC = () => {
                   <p className="text-[11px] text-[#9A9AA3] mt-2">
                     Delivered in 3–5 business days across Indian metros. Full live tracking link.
                   </p>
-                </label>
-
-                <label
-                  onClick={() => setDeliveryMethod('express')}
-                  className={`p-4 border cursor-pointer flex flex-col justify-between transition-all ${
-                    deliveryMethod === 'express'
-                      ? 'bg-[#0A0A0D] border-[#8B5CF6]'
-                      : 'bg-[#15151B] border-[#2A2A32] hover:border-[#C7CBD3]/40'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase text-[#F5F5F7]">
-                      Priority Air Courier
-                    </span>
-                    <span className="font-mono-numbers text-xs font-bold text-[#F5F5F7]">
-                      ₹{shipping + 150}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#9A9AA3] mt-2">
-                    Delivered in 24–48 hours via Bluedart Air priority vault dispatch.
-                  </p>
-                </label>
+                </div>
               </div>
             </div>
 
@@ -884,7 +856,7 @@ export const CheckoutView: React.FC = () => {
                   </div>
                 )}
                 <div className="flex justify-between text-[#9A9AA3]">
-                  <span>Shipping ({deliveryMethod === 'express' ? 'Priority Air' : 'Standard'})</span>
+                  <span>Shipping</span>
                   <span className="font-mono-numbers text-[#F5F5F7]">
                     {finalShipping === 0 ? 'FREE' : `₹${finalShipping.toLocaleString('en-IN')}`}
                   </span>

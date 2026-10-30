@@ -34,7 +34,7 @@ export const CategorySection: React.FC = () => {
 
         {/* Category Cards Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4">
-          {CATEGORIES_DATA.map((cat, idx) => (
+          {CATEGORIES_DATA.filter((cat) => !['ring', 'rings'].includes(cat.name.toLowerCase()) && !['ring', 'rings'].includes(cat.slug.toLowerCase())).map((cat, idx) => (
             <ScrollReveal key={cat.name} animation="fade-up" delay={idx * 60}>
               <div
                 onClick={() => navigateTo('shop', { category: cat.name })}

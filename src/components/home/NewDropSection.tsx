@@ -14,7 +14,9 @@ export const NewDropSection: React.FC = () => {
 
   // Curated flagship drop product from active catalog
   const heroDrop = products.find((p) => p.slug === 'triple-cross-ch-necklace') || products[0];
-  const sideDrops = products.filter((p) => p.slug !== heroDrop?.slug).slice(0, 2);
+  const sideDrops = products
+    .filter((p) => p.slug !== heroDrop?.slug && !['ring', 'rings'].includes(p.category.toLowerCase()))
+    .slice(0, 2);
 
   if (!heroDrop) return null;
 

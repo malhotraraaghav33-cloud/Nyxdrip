@@ -113,23 +113,44 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
     }
   };
 
+  const isRingCategory = Boolean(product && ['ring', 'rings'].includes(product.category.toLowerCase()));
+
   const relatedProducts = React.useMemo(() => {
-    if (!product) return [];
-    const sameCat = products.filter(
+    if (!product || isRingCategory) return [];
+    const available = products.filter((p) => !['ring', 'rings'].includes(p.category.toLowerCase()));
+    const sameCat = available.filter(
       (p) => p.category === product.category && p.id !== product.id && p.slug !== product.slug
     );
     if (sameCat.length < 4) {
-      const remaining = products.filter(
+      const remaining = available.filter(
         (p) => p.id !== product.id && p.slug !== product.slug && !sameCat.some((sc) => sc.slug === p.slug)
       );
       return [...sameCat, ...remaining].slice(0, 4);
     }
     return sameCat.slice(0, 4);
-  }, [product, products]);
+  }, [product, products, isRingCategory]);
 
   const toggleAccordion = (id: string) => {
     setActiveAccordion(activeAccordion === id ? null : id);
   };
+
+  if (isRingCategory) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0D] text-[#F5F5F7] py-20 px-4">
+        <div className="max-w-md mx-auto text-center space-y-4">
+          <h2 className="font-display text-2xl font-bold uppercase text-[#F5F5F7]">Archive Piece Archived</h2>
+          <p className="text-xs text-[#9A9AA3]">This piece is currently not available in our storefront catalog.</p>
+          <button
+            type="button"
+            onClick={() => navigateTo('shop')}
+            className="px-6 py-2.5 bg-[#8B5CF6] hover:bg-[#7c4def] text-white text-xs font-bold uppercase tracking-wider transition-colors inline-block"
+          >
+            Explore Active Catalog
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0A0D] text-[#F5F5F7] py-8 sm:py-12 pb-24 lg:pb-12">

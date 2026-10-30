@@ -32,6 +32,7 @@ export const SearchModal: React.FC = () => {
 
   const filteredProducts = searchTerm.trim()
     ? products.filter((p) => {
+        if (['ring', 'rings'].includes(p.category.toLowerCase())) return false;
         const query = searchTerm.toLowerCase();
         return (
           p.name.toLowerCase().includes(query) ||
@@ -77,7 +78,7 @@ export const SearchModal: React.FC = () => {
                 handleSearchAll(searchTerm.trim());
               }
             }}
-            placeholder="Search chrome crosses, rings, chains, or styles..."
+            placeholder="Search chrome crosses, chains, bracelets, or styles..."
             className="w-full bg-transparent text-sm text-[#F5F5F7] placeholder-[#9A9AA3] focus:outline-none"
           />
           {searchTerm && (
@@ -166,7 +167,7 @@ export const SearchModal: React.FC = () => {
                 <div className="text-center py-8">
                   <p className="text-sm text-[#F5F5F7] font-semibold">No accessories found</p>
                   <p className="text-xs text-[#9A9AA3] mt-1">
-                    Try searching for "pendant", "bracelet", "ring", or "chrome"
+                    Try searching for "pendant", "bracelet", "chain", or "chrome"
                   </p>
                 </div>
               )}
