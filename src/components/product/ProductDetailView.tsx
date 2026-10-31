@@ -69,12 +69,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
     : 0;
 
   const handleAddToCart = () => {
-    addToCart(product, quantity, selectedVariant);
+    if (product.stock <= 0 || product.priceIsPlaceholder || product.price <= 0) return;
+    addToCart(product, Math.min(quantity, product.stock), selectedVariant);
     openCart();
   };
 
   const handleBuyNow = () => {
-    addToCart(product, quantity, selectedVariant);
+    if (product.stock <= 0 || product.priceIsPlaceholder || product.price <= 0) return;
+    addToCart(product, Math.min(quantity, product.stock), selectedVariant);
     navigateTo('checkout');
   };
 
@@ -257,8 +259,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[11px] font-semibold text-[#00D9FF]">
-                    In Stock · Ready to Dispatch
+                  <span className={`text-[11px] font-semibold ${product.stock <= 0 ? 'text-red-400' : product.stock <= 3 ? 'text-amber-300' : 'text-[#00D9FF]'}`}>
+                    {product.stock <= 0 ? 'Out of Stock' : product.stock <= 3 ? `Only ${product.stock} Left` : 'In Stock · Ready to Dispatch'}
                   </span>
                 </div>
               </div>
@@ -311,9 +313,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
                       <button
                         type="button"
                         onClick={handleAddToCart}
-                        className="w-full py-3 bg-[#8B5CF6] hover:bg-[#7c4def] text-white text-xs font-bold uppercase tracking-widest transition-colors shadow-lg active:scale-95"
+                        disabled={product.stock <= 0 || Boolean(product.priceIsPlaceholder) || product.price <= 0}
+                        className="w-full py-3 bg-[#8B5CF6] hover:bg-[#7c4def] text-white text-xs font-bold uppercase tracking-widest transition-colors shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Add to Bag
+                        {product.stock <= 0 ? 'Out of Stock' : 'Add to Bag'}
                       </button>
                     </Magnetic>
                   </div>
@@ -324,9 +327,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
                   <button
                     type="button"
                     onClick={handleBuyNow}
+                    disabled={product.stock <= 0 || Boolean(product.priceIsPlaceholder) || product.price <= 0}
                     className="w-full py-3 bg-[#15151B] hover:bg-[#202029] border border-[#2A2A32] hover:border-[#00D9FF] text-[#00D9FF] text-xs font-bold uppercase tracking-widest transition-colors active:scale-95"
                   >
-                    Buy Now With 1-Click
+                    {product.stock <= 0 ? 'Out of Stock' : 'Buy Now With 1-Click'}
                   </button>
                 </Magnetic>
               </div>
@@ -555,9 +559,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
           <button
             type="button"
             onClick={handleAddToCart}
-            className="px-6 py-2.5 bg-[#8B5CF6] text-white text-xs font-bold uppercase tracking-wider shadow-lg active:scale-95 transition-transform"
+            disabled={product.stock <= 0 || Boolean(product.priceIsPlaceholder) || product.price <= 0}
+            className="px-6 py-2.5 bg-[#8B5CF6] text-white text-xs font-bold uppercase tracking-wider shadow-lg active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Add to Bag
+            {product.stock <= 0 ? 'Out of Stock' : 'Add to Bag'}
           </button>
         </div>
       </div>
