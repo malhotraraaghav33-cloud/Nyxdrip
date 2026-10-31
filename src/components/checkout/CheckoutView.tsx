@@ -148,7 +148,9 @@ export const CheckoutView: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map(item => ({
-            productId: item.product.id,
+            // Backend's guest-order RPC matches public.products.slug (not the
+            // frontend's local 'prod-...' identifier or the DB UUID).
+            productId: item.product.slug,
             quantity: item.quantity,
             selectedVariant: item.selectedVariant || 'Standard',
           })),
