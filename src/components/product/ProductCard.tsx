@@ -54,6 +54,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (product.stock <= 0 || isPlaceholderPrice) return;
     addToCart(product, 1);
     openCart();
   };
@@ -84,9 +85,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
     >
       {/* Visual Image Container with Slide & Zoom effects */}
       <div className="relative aspect-[4/5] w-full bg-[#0A0A0D] overflow-hidden">
+        <div className="absolute top-2 left-2 z-20">
+          {product.stock <= 0 ? (
+            <span className="px-2 py-1 bg-red-950/90 border border-red-500/50 text-red-200 text-[10px] uppercase font-bold">Out of Stock</span>
+          ) : product.stock <= 3 ? (
+            <span className="px-2 py-1 bg-amber-950/90 border border-amber-500/50 text-amber-200 text-[10px] uppercase font-bold">Only {product.stock} Left</span>
+          ) : (
+            <span className="px-2 py-1 bg-[#05261e]/90 border border-emerald-500/40 text-emerald-300 text-[10px] uppercase font-bold">In Stock</span>
+          )}
+        </div>
         {/* Badge */}
         {product.badge && (
-          <div className="absolute top-2.5 left-2.5 z-10">
+          <div className="absolute top-10 left-2.5 z-10">
             <span
               className={`px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase border transition-colors ${
                 product.badge === 'NEW'
@@ -182,10 +192,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
           <button
             type="button"
             onClick={handleQuickAdd}
-            className="w-full py-2.5 px-3 bg-[#0A0A0D]/95 hover:bg-[#8B5CF6] active:scale-95 border border-[#2A2A32] hover:border-[#8B5CF6] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all focus-visible:outline-none"
+            disabled={product.stock <= 0 || isPlaceholderPrice}
+            className="w-full py-2.5 px-3 bg-[#0A0A0D]/95 hover:bg-[#8B5CF6] active:scale-95 border border-[#2A2A32] hover:border-[#8B5CF6] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
           >
             <ShoppingBag size={14} />
-            <span>Quick Add</span>
+            <span>{product.stock <= 0 ? 'Out of Stock' : 'Quick Add'}</span>
           </button>
         </div>
       </div>
