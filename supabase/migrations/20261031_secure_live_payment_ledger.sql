@@ -135,7 +135,7 @@ DECLARE
 BEGIN
  IF p_provider <> 'razorpay' OR p_charged_currency <> 'INR' OR p_delivery_method NOT IN ('standard','express')
     OR p_user_id IS NOT NULL THEN RAISE EXCEPTION 'CHECKOUT_UNSUPPORTED'; END IF;
- IF p_guest_email IS NULL OR length(p_guest_email)>254 OR p_guest_email !~* '^[^[:space:]@]+@[^[:space:]@]+\\.[^[:space:]@]+$'
+ IF p_guest_email IS NULL OR length(p_guest_email)>254 OR p_guest_email !~* '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'
     OR length(trim(coalesce(p_guest_name,''))) < 2 OR length(p_guest_name)>120
     OR coalesce(p_guest_phone,'') !~ '^[0-9]{10}$'
     OR p_idempotency_key IS NULL OR p_idempotency_key !~ '^[A-Za-z0-9_-]{12,90}$'
