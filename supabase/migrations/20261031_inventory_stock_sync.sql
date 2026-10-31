@@ -35,9 +35,10 @@ FOR EACH ROW
 EXECUTE FUNCTION public.nyx_sync_available_stock();
 
 -- Only seed missing inventory rows; preserve quantities already entered by owner.
--- New product catalog counts are starting values, not verified physical stock.
+-- New inventory records start at ZERO until the merchant enters actual physical stock.
+-- The demo catalog's original "10" stock quantity is NOT verified inventory.
 INSERT INTO public.inventory (product_id, quantity, reserved_quantity, low_stock_threshold)
-SELECT p.id, GREATEST(0, p.stock), 0, 3
+SELECT p.id, 0, 0, 3
 FROM public.products p
 LEFT JOIN public.inventory i ON i.product_id = p.id
 WHERE p.is_active = true AND i.product_id IS NULL
