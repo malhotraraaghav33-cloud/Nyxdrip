@@ -42,7 +42,7 @@ export const mapDbProductToFrontend = (row: any): Product => {
     images: resolvedImages,
     rating: row.rating !== null && row.rating !== undefined ? Number(row.rating) : undefined,
     reviewCount: row.review_count ? Number(row.review_count) : 0,
-    stock: row.stock !== null && row.stock !== undefined ? Number(row.stock) : 10,
+    stock: Number.isFinite(Number(row.stock)) && row.stock != null ? Math.max(0, Math.floor(Number(row.stock))) : 0,
     tags: Array.isArray(row.tags) ? row.tags : [],
     badge: row.badge || undefined,
     style: row.style || undefined,
