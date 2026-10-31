@@ -13,6 +13,7 @@ ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL 
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT ARRAY[]::TEXT[];
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS original_price NUMERIC(10, 2);
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price_is_placeholder BOOLEAN DEFAULT false;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_new_arrival BOOLEAN NOT NULL DEFAULT false;
 
 -- Ensure UNIQUE index on slug
 CREATE UNIQUE INDEX IF NOT EXISTS idx_products_slug ON public.products (slug);
