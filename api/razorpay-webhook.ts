@@ -1,4 +1,4 @@
-import { configured, dbFetch, finalize, json, orderForProvider, paymentCheck, verifyHmac, type Request, type Response } from './_lib/payments';
+import { configured, dbFetch, finalize, json, orderForProvider, paymentCheck, verifyHmac, type Request, type Response } from './_lib/payments.js';
 
 // Require raw request bytes for a correct Razorpay webhook signature check.
 // If Vercel/framework has already parsed the body, fail closed; never reconstruct.
