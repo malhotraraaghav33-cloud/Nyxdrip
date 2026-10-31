@@ -1,4 +1,4 @@
-import { configured, dbFetch, finalize, json, orderForProvider, paymentCheck, readJson, verifyHmac, type Request, type Response } from './_lib/payments';
+import { configured, dbFetch, finalize, json, orderForProvider, paymentCheck, readJson, verifyHmac, type Request, type Response } from './_lib/payments.js';
 
 // An on-screen success is reported only after a captured payment is checked
 // against Razorpay AND the order is finalized in Supabase.
