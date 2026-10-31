@@ -16,47 +16,35 @@ export const validateCartStock = async (
   cartItems: CartItem[]
 ): Promise<{ valid: boolean; errorItem?: string; availableStock?: number }> => {
   if (!isSupabaseConfigured) {
-    // If Supabase is not configured, validate against client-side stock metadata
+    const shortage = cartItems.find(item => item.quantity > item.product.stock || item.product.stock <= 0);
+    return shortage
+      ? { valid: false, errorItem: shortage.product.name, availableStock: Math.max(0, shortage.product.stock) }
+      : { valid: true };
+  }
+
+  // Query server-controlled available stock. A database trigger keeps
+  // products.stock aligned with inventory.quantity - reserved_quantity.
+  // Never continue checkout on an inventory lookup error.
+  try {
     for (const item of cartItems) {
-      if (item.quantity > item.product.stock) {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, slug, stock, is_active')
+        .eq('slug', item.product.slug)
+        .maybeSingle();
+
+      if (error || !data || !data.is_active || data.stock == null ||
+          Number(data.stock) < item.quantity) {
         return {
           valid: false,
           errorItem: item.product.name,
-          availableStock: item.product.stock,
+          availableStock: Math.max(0, Number(data?.stock) || 0),
         };
       }
     }
     return { valid: true };
-  }
-
-  try {
-    for (const item of cartItems) {
-      const { data, error } = await supabase
-        .from('inventory')
-        .select('quantity, allow_backorder')
-        .eq('product_id', item.product.id)
-        .maybeSingle();
-
-      if (error) {
-        console.warn('Inventory check fallback for', item.product.name);
-        continue;
-      }
-
-      if (data) {
-        if (!data.allow_backorder && data.quantity < item.quantity) {
-          return {
-            valid: false,
-            errorItem: item.product.name,
-            availableStock: Math.max(0, data.quantity),
-          };
-        }
-      }
-    }
-
-    return { valid: true };
-  } catch (err) {
-    console.warn('Inventory validation warning:', err);
-    return { valid: true };
+  } catch {
+    return { valid: false, errorItem: 'Inventory temporarily unavailable', availableStock: 0 };
   }
 };
 
