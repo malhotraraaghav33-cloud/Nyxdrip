@@ -551,8 +551,9 @@ export const CheckoutView: React.FC = () => {
             <p className="text-[#00D9FF] font-bold">TEST MODE ONLY — no real fulfilment order will be created.</p>
             {!testCheckoutEnabled && <p className="text-amber-300">Checkout disabled until the test environment and secure order handling are configured.</p>}
             {appliedCoupon && <p className="text-amber-300">Remove coupon before testing payment. Test amounts are calculated from live catalog prices, without discounts.</p>}
-            {paymentFeedback && <p role="status" className="text-[#00D9FF]">{paymentFeedback}</p>}
-          </div>
+              {paymentFeedback && <p role="status" className="text-[#00D9FF]">{paymentFeedback}</p>}
+            </div>
+            </div>
           </div>
 
           {/* Right Summary Column */}
