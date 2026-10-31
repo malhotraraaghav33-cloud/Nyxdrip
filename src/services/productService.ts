@@ -7,6 +7,10 @@ let cachedProducts: Product[] | null = null;
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 60 * 1000; // 1 minute client cache
 
+// Never advertise local placeholder stock as sellable when the live catalog
+// is missing or Supabase cannot be reached.
+const unavailableFallback = () => PRODUCTS.map((product) => ({ ...product, stock: 0 }));
+
 export const invalidateProductsCache = () => {
   cachedProducts = null;
   lastFetchTime = 0;
@@ -84,16 +88,17 @@ export const fetchAllProducts = async (forceRefresh = false): Promise<Product[]>
       return mapped;
     }
 
-    // 2. If is_active column error or empty, fall back cleanly to local real catalog
-    console.info('Supabase products table returned empty or unmigrated. Using local catalog fallback.');
-    cachedProducts = PRODUCTS;
+    // Supabase is configured: catalog missing or unavailable. Show images,
+    // but never advertise made-up stock or allow checkout.
+    console.warn('Live Supabase catalog missing or unavailable; products shown as sold out.');
+    cachedProducts = unavailableFallback();
     lastFetchTime = now;
-    return PRODUCTS;
+    return cachedProducts;
   } catch (err) {
-    console.warn('Network error fetching Supabase products. Falling back to local catalog:', err);
-    cachedProducts = PRODUCTS;
+    console.warn('Network error fetching Supabase products; disabling sales until stock is confirmed:', err);
+    cachedProducts = unavailableFallback();
     lastFetchTime = now;
-    return PRODUCTS;
+    return cachedProducts;
   }
 };
 
