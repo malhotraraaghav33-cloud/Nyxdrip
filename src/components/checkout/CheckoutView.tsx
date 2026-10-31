@@ -4,23 +4,16 @@ import { useCart } from '../../context/CartContext';
 import { useNavigation } from '../../context/NavigationContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { CustomerInfo, Order, OrderStatus } from '../../types';
+import { CustomerInfo, OrderStatus } from '../../types';
 import { ScrollReveal } from '../common/ScrollReveal';
 import { Magnetic } from '../common/Magnetic';
 import { validateCartStock } from '../../services/inventoryService';
-import { createOrderInDatabase } from '../../services/orderService';
+import { loadRazorpayScript } from '../../services/paymentService';
 import { fetchUserAddresses, saveUserAddress, UserAddress } from '../../services/addressService';
 import { AccountModal } from '../account/AccountModal';
 import { buildWhatsAppOrderUrl } from '../../utils/whatsappOrder';
 
-// ============================================================================
-// PAYMENT INTEGRATION INTERFACE CONTRACT
-// Note for production deployment:
-// TODO: Connect to Razorpay India via process.env.VITE_RAZORPAY_KEY_ID
-// TODO: Connect to Cashfree India via process.env.VITE_CASHFREE_APP_ID
-// TODO: Connect to PayPal International via process.env.VITE_PAYPAL_CLIENT_ID
-// ============================================================================
-
+// Razorpay hosted test checkout; live orders and fulfilment stay disabled.
 export const CheckoutView: React.FC = () => {
   const { items, subtotal, discount, shipping, total, clearCart, appliedCoupon } = useCart();
   const { navigateTo } = useNavigation();
@@ -78,16 +71,10 @@ export const CheckoutView: React.FC = () => {
   }, [user, profile]);
 
   const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'express'>('standard');
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'netbanking' | 'wallets' | 'paypal'>('upi');
-  const [upiId, setUpiId] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-
-  // Order & Processing State Machine: 'Pending' | 'Processing' | 'Paid' | 'Failed' | 'Cancelled'
   const [orderState, setOrderState] = useState<OrderStatus>('Pending');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [simulateFailure, setSimulateFailure] = useState(false);
+  const [paymentFeedback, setPaymentFeedback] = useState('');
+  const testCheckoutEnabled = import.meta.env.VITE_RAZORPAY_TEST_MODE_ENABLED === 'true';
 
   // Delivery fee adjustments
   const finalShipping = deliveryMethod === 'express' ? shipping + 150 : shipping;
@@ -119,16 +106,6 @@ export const CheckoutView: React.FC = () => {
       err.pincode = 'Enter valid 6-digit postal code';
     }
 
-    if (paymentMethod === 'upi' && !upiId.trim()) {
-      err.upi = 'Enter your VPA / UPI ID (e.g. name@okhdfcbank)';
-    }
-
-    if (paymentMethod === 'card') {
-      if (!cardNumber.replace(/\s/g, '')) err.card = 'Card number is required';
-      if (!cardExpiry) err.expiry = 'MM/YY required';
-      if (!cardCvv) err.cvv = 'CVV required';
-    }
-
     setErrors(err);
     return Object.keys(err).length === 0;
   };
@@ -146,101 +123,100 @@ export const CheckoutView: React.FC = () => {
 
   const handleProcessOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) {
       window.scrollTo({ top: 150, behavior: 'smooth' });
       return;
     }
-
-    // Begin State Machine transition: Pending -> Processing
-    setOrderState('Processing');
-
-    // 1. Centralized Inventory Validation check before authorizing transaction
-    const stockValidation = await validateCartStock(items);
-    if (!stockValidation.valid) {
-      setOrderState('Pending');
-      showToast(
-        'Inventory Allocation Notice',
-        `Insufficient stock for "${stockValidation.errorItem}". Only ${stockValidation.availableStock ?? 0} remain in the vault.`,
-        'error'
-      );
+    if (!testCheckoutEnabled) {
+      showToast('Checkout not available', 'Online payments are disabled until secure order tracking is ready.', 'error');
+      return;
+    }
+    if (appliedCoupon) {
+      showToast('Coupon not supported', 'Remove the coupon to test Razorpay checkout.', 'error');
       return;
     }
 
-    // Simulate real gateway handshake (Razorpay / Cashfree / PayPal)
-    setTimeout(async () => {
-      if (simulateFailure) {
-        setOrderState('Failed');
-        return;
-      }
+    setPaymentFeedback('');
+    setOrderState('Processing');
+    try {
+      const stock = await validateCartStock(items);
+      if (!stock.valid) throw new Error('An item in the bag is out of stock.');
 
-      // Success branch: Processing -> Paid
-      setOrderState('Paid');
-
-      const generatedOrderId = `NYX-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-      const completedOrder: Order = {
-        orderId: generatedOrderId,
-        items: [...items],
-        subtotal,
-        discount,
-        shipping: finalShipping,
-        total: finalTotal,
-        customer: formData,
-        deliveryMethod,
-        paymentMethod,
-        status: 'Paid',
-        createdAt: new Date().toISOString(),
-        estimatedDelivery: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
-          weekday: 'long',
-          month: 'short',
-          day: 'numeric',
+      const response = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            productId: item.product.id,
+            quantity: item.quantity,
+          })),
+          deliveryMethod,
         }),
-      };
-
-      // 2. Persist order & order items to Supabase Database
-      await createOrderInDatabase({
-        orderNumber: generatedOrderId,
-        userId: user?.id || null,
-        customer: formData,
-        items,
-        subtotal,
-        discount,
-        shipping: finalShipping,
-        total: finalTotal,
-        deliveryMethod,
-        paymentMethod,
-        couponCode: appliedCoupon?.code || null,
       });
-
-      // 3. Save address to user's saved addresses in Supabase if requested
-      if (user && saveAddressToAccount) {
-        saveUserAddress(user.id, {
-          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
-          phone: formData.phone,
-          street_address: formData.address,
-          apartment: formData.apartment,
-          city: formData.city,
-          state: formData.state,
-          postal_code: formData.pincode,
-          country: formData.country,
-          is_default: savedAddresses.length === 0,
-        }).catch(() => {});
+      const order = await response.json();
+      if (!response.ok || !order?.testMode || !order?.order_id || !order?.key_id) {
+        throw new Error(order?.error || 'Cannot create a test payment.');
       }
 
-      try {
-        localStorage.setItem(`order_${generatedOrderId}`, JSON.stringify(completedOrder));
-        localStorage.setItem('latest_order_id', generatedOrderId);
-      } catch {
-        // storage fallback
+      if (!(await loadRazorpayScript()) || !(window as any).Razorpay) {
+        throw new Error('Razorpay Checkout could not be loaded.');
       }
-
-      clearCart();
-
-      setTimeout(() => {
-        navigateTo('order-confirmation', { orderId: generatedOrderId });
-      }, 800);
-    }, 1800);
+      const Razorpay = (window as any).Razorpay;
+      const checkout = new Razorpay({
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.order_id,
+        name: 'NYXDRIP',
+        description: 'TEST MODE ONLY — no fulfilment order is created',
+        prefill: {
+          name: [formData.firstName, formData.lastName].join(' '),
+          email: formData.email,
+          contact: formData.phone,
+        },
+        modal: {
+          ondismiss: () => {
+            setOrderState('Pending');
+            showToast('Checkout cancelled', 'No fulfilment order was created.', 'info');
+          },
+        },
+        handler: async (result: any) => {
+          setOrderState('Processing');
+          try {
+            const verificationResponse = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: result.razorpay_order_id,
+                razorpay_payment_id: result.razorpay_payment_id,
+                razorpay_signature: result.razorpay_signature,
+              }),
+            });
+            const verified = await verificationResponse.json();
+            if (!verificationResponse.ok || verified?.success !== true || !verified?.testMode) {
+              throw new Error(verified?.error || 'Could not verify Razorpay test payment.');
+            }
+            setPaymentFeedback('Razorpay TEST payment verified. Your cart is unchanged. No order has been recorded or dispatched.');
+            showToast('Test payment verified', 'No real order was created.', 'success');
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Payment verification failed';
+            setPaymentFeedback('Verification incomplete: ' + message + '. Check the payment in Razorpay Test Dashboard.');
+            showToast('Verification incomplete', message, 'error');
+          } finally {
+            setOrderState('Pending');
+          }
+        },
+      });
+      checkout.on('payment.failed', () => {
+        setOrderState('Pending');
+        showToast('Test payment failed', 'You can retry checkout.', 'error');
+      });
+      setOrderState('Pending');
+      checkout.open();
+    } catch (error) {
+      setOrderState('Pending');
+      showToast('Payment unavailable', error instanceof Error ? error.message : 'Unable to start checkout', 'error');
+    }
   };
 
   if (items.length === 0 && orderState === 'Pending') {
@@ -308,41 +284,6 @@ export const CheckoutView: React.FC = () => {
           </div>
         )}
 
-        {/* Failed State Alert Modal */}
-        {orderState === 'Failed' && (
-          <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
-            <div className="max-w-md w-full bg-[#15151B] border border-red-500/40 p-6 text-center space-y-4">
-              <div className="w-12 h-12 mx-auto rounded-full bg-red-500/10 flex items-center justify-center text-red-400">
-                <AlertCircle size={24} />
-              </div>
-              <h3 className="font-display text-lg font-bold text-red-400">
-                TRANSACTION FAILED OR DECLINED
-              </h3>
-              <p className="text-xs text-[#9A9AA3] leading-relaxed">
-                The simulated bank or card issuer declined payment. You can retry with another method or disable simulation.
-              </p>
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSimulateFailure(false);
-                    setOrderState('Pending');
-                  }}
-                  className="flex-1 py-2.5 bg-[#8B5CF6] hover:bg-[#7c4def] text-white text-xs font-bold uppercase tracking-wider"
-                >
-                  Retry Payment
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOrderState('Pending')}
-                  className="px-4 py-2.5 border border-[#2A2A32] text-xs text-[#9A9AA3] hover:text-[#F5F5F7]"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         <form onSubmit={handleProcessOrder} className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           {/* Left Form Column */}
@@ -604,207 +545,14 @@ export const CheckoutView: React.FC = () => {
                 <span className="text-[11px] text-[#9A9AA3]">Zero Gateway Convenience Fee</span>
               </div>
 
-              {/* Payment Selectors */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('upi')}
-                  className={`p-3 border text-center flex flex-col items-center justify-center gap-1.5 transition-all ${
-                    paymentMethod === 'upi'
-                      ? 'border-[#8B5CF6] bg-[#0A0A0D] text-white'
-                      : 'border-[#2A2A32] bg-[#15151B] text-[#9A9AA3] hover:text-[#F5F5F7]'
-                  }`}
-                >
-                  <Smartphone size={18} className="text-[#00D9FF]" />
-                  <span className="text-[11px] font-bold">UPI / QR</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-3 border text-center flex flex-col items-center justify-center gap-1.5 transition-all ${
-                    paymentMethod === 'card'
-                      ? 'border-[#8B5CF6] bg-[#0A0A0D] text-white'
-                      : 'border-[#2A2A32] bg-[#15151B] text-[#9A9AA3] hover:text-[#F5F5F7]'
-                  }`}
-                >
-                  <CreditCard size={18} className="text-[#8B5CF6]" />
-                  <span className="text-[11px] font-bold">Cards</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('netbanking')}
-                  className={`p-3 border text-center flex flex-col items-center justify-center gap-1.5 transition-all ${
-                    paymentMethod === 'netbanking'
-                      ? 'border-[#8B5CF6] bg-[#0A0A0D] text-white'
-                      : 'border-[#2A2A32] bg-[#15151B] text-[#9A9AA3] hover:text-[#F5F5F7]'
-                  }`}
-                >
-                  <Building2 size={18} className="text-[#C7CBD3]" />
-                  <span className="text-[11px] font-bold">Net Banking</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('wallets')}
-                  className={`p-3 border text-center flex flex-col items-center justify-center gap-1.5 transition-all ${
-                    paymentMethod === 'wallets'
-                      ? 'border-[#8B5CF6] bg-[#0A0A0D] text-white'
-                      : 'border-[#2A2A32] bg-[#15151B] text-[#9A9AA3] hover:text-[#F5F5F7]'
-                  }`}
-                >
-                  <Wallet size={18} className="text-[#00D9FF]" />
-                  <span className="text-[11px] font-bold">Wallets</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('paypal')}
-                  className={`p-3 border text-center flex flex-col items-center justify-center gap-1.5 transition-all ${
-                    paymentMethod === 'paypal'
-                      ? 'border-[#8B5CF6] bg-[#0A0A0D] text-white'
-                      : 'border-[#2A2A32] bg-[#15151B] text-[#9A9AA3] hover:text-[#F5F5F7]'
-                  }`}
-                >
-                  <Globe size={18} className="text-[#8B5CF6]" />
-                  <span className="text-[11px] font-bold">PayPal</span>
-                </button>
-              </div>
-
-              {/* Dynamic Sub-Payment Inputs */}
-              <div className="p-4 bg-[#0A0A0D] border border-[#2A2A32] text-xs">
-                {paymentMethod === 'upi' && (
-                  <div className="space-y-3">
-                    <p className="text-[#9A9AA3]">
-                      Pay instantly via Google Pay, PhonePe, Paytm, CRED, or enter your VPA handle:
-                    </p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="yourname@okhdfcbank"
-                        value={upiId}
-                        onChange={(e) => setUpiId(e.target.value)}
-                        className="flex-1 bg-[#15151B] border border-[#2A2A32] px-3.5 py-2 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/50 focus:outline-none focus:border-[#8B5CF6]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setUpiId('nyxoperator@okaxis')}
-                        className="px-3 py-2 bg-[#2A2A32] text-[10px] font-bold uppercase text-[#C7CBD3] hover:text-white"
-                      >
-                        Sample UPI
-                      </button>
-                    </div>
-                    {errors.upi && <p className="text-[10px] text-red-400">{errors.upi}</p>}
-                    <p className="text-[11px] text-[#9A9AA3]">
-                      // Integration point: Razorpay UPI Intent & QR trigger
-                    </p>
-                  </div>
-                )}
-
-                {paymentMethod === 'card' && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-[10px] uppercase text-[#9A9AA3] mb-1">
-                        Card Number
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="4242 ···· ···· 4242"
-                        maxLength={19}
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                        className="w-full bg-[#15151B] border border-[#2A2A32] px-3.5 py-2 text-xs font-mono-numbers text-[#F5F5F7]"
-                      />
-                      {errors.card && <p className="text-[10px] text-red-400 mt-1">{errors.card}</p>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] uppercase text-[#9A9AA3] mb-1">
-                          Expiry (MM/YY)
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="12/28"
-                          maxLength={5}
-                          value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value)}
-                          className="w-full bg-[#15151B] border border-[#2A2A32] px-3.5 py-2 text-xs font-mono-numbers text-[#F5F5F7]"
-                        />
-                        {errors.expiry && <p className="text-[10px] text-red-400 mt-1">{errors.expiry}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-[10px] uppercase text-[#9A9AA3] mb-1">
-                          CVV
-                        </label>
-                        <input
-                          type="password"
-                          placeholder="•••"
-                          maxLength={4}
-                          value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value)}
-                          className="w-full bg-[#15151B] border border-[#2A2A32] px-3.5 py-2 text-xs font-mono-numbers text-[#F5F5F7]"
-                        />
-                        {errors.cvv && <p className="text-[10px] text-red-400 mt-1">{errors.cvv}</p>}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod === 'netbanking' && (
-                  <div className="space-y-2">
-                    <p className="text-[#9A9AA3]">Select your registered bank portal:</p>
-                    <select className="w-full bg-[#15151B] border border-[#2A2A32] px-3 py-2 text-xs text-[#F5F5F7] focus:outline-none">
-                      <option>HDFC Bank</option>
-                      <option>ICICI Bank</option>
-                      <option>State Bank of India (SBI)</option>
-                      <option>Axis Bank</option>
-                      <option>Kotak Mahindra Bank</option>
-                    </select>
-                  </div>
-                )}
-
-                {paymentMethod === 'wallets' && (
-                  <div className="space-y-2">
-                    <p className="text-[#9A9AA3]">Supported digital wallets:</p>
-                    <div className="flex gap-2">
-                      <span className="px-3 py-1.5 bg-[#15151B] border border-[#2A2A32] text-[#F5F5F7] text-xs">
-                        Paytm Wallet
-                      </span>
-                      <span className="px-3 py-1.5 bg-[#15151B] border border-[#2A2A32] text-[#F5F5F7] text-xs">
-                        Amazon Pay
-                      </span>
-                      <span className="px-3 py-1.5 bg-[#15151B] border border-[#2A2A32] text-[#F5F5F7] text-xs">
-                        MobiKwik
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod === 'paypal' && (
-                  <div className="space-y-2">
-                    <p className="text-[#9A9AA3]">
-                      International orders processed in USD / EUR with buyer protection via PayPal.
-                    </p>
-                    <p className="text-[11px] text-[#00D9FF]">
-                      // Integration point: process.env.VITE_PAYPAL_CLIENT_ID
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* State Machine Demo Toggle for testing failures vs success */}
-              <div className="pt-2 flex items-center justify-between text-[11px] text-[#9A9AA3] border-t border-[#2A2A32]">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={simulateFailure}
-                    onChange={(e) => setSimulateFailure(e.target.checked)}
-                    className="accent-red-500"
-                  />
-                  <span>Simulate Payment Failure Mode (for testing State Machine)</span>
-                </label>
-              </div>
+              <div className="border border-[#8B5CF6]/30 bg-[#0A0A0D] p-4 space-y-3 text-xs text-[#C7CBD3]">
+            <p className="font-bold text-white uppercase tracking-wider">Razorpay Hosted Checkout</p>
+            <p>UPI, cards and other supported methods appear securely inside the Razorpay modal. This website does not collect card numbers or CVVs.</p>
+            <p className="text-[#00D9FF] font-bold">TEST MODE ONLY — no real fulfilment order will be created.</p>
+            {!testCheckoutEnabled && <p className="text-amber-300">Checkout disabled until the test environment and secure order handling are configured.</p>}
+            {appliedCoupon && <p className="text-amber-300">Remove coupon before testing payment. Test amounts are calculated from live catalog prices, without discounts.</p>}
+              {paymentFeedback && <p role="status" className="text-[#00D9FF]">{paymentFeedback}</p>}
+            </div>
             </div>
           </div>
 
@@ -872,10 +620,10 @@ export const CheckoutView: React.FC = () => {
                 <Magnetic strength={10} className="w-full">
                   <button
                     type="submit"
-                    disabled={orderState === 'Processing'}
+                    disabled={orderState === 'Processing' || !testCheckoutEnabled || Boolean(appliedCoupon)}
                     className="w-full py-4 bg-[#8B5CF6] hover:bg-[#7c4def] disabled:opacity-50 text-white text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 shadow-2xl transition-all active:scale-95"
                   >
-                    <span>Authorize & Complete Order (₹{finalTotal.toLocaleString('en-IN')})</span>
+                    <span>{testCheckoutEnabled ? 'Open Razorpay Test Checkout' : 'Online Checkout Coming Soon'}</span>
                   </button>
                 </Magnetic>
 
@@ -900,10 +648,10 @@ export const CheckoutView: React.FC = () => {
 
               <div className="space-y-1 text-center">
                 <p className="text-[11px] text-[#9A9AA3]">
-                  🔒 256-Bit Bank Level Encryption · Nyxdrip Vault Protocol
+                  Razorpay hosted secure checkout · Test mode
                 </p>
                 <p className="text-[10px] text-[#9A9AA3]/60">
-                  By clicking complete, you agree to our Store Terms & Dispatch Policy.
+                  Testing Razorpay does not create a dispatchable order.
                 </p>
               </div>
             </div>
