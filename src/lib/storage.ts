@@ -31,32 +31,38 @@ export const getProductImageUrl = (imagePath: string | null | undefined, fallbac
 
 /**
  * Storage upload helper for Admin Area.
- * Uploads an image to the 'products' bucket under subfolder category.
+ * Uploads an image to the 'products' bucket under subfolder category and returns both path and public CDN URL.
  */
 export const uploadProductImage = async (
   file: File,
-  folder: 'pendants' | 'bracelets' | 'chains' | 'rings' | 'wallets' | 'accessories' = 'accessories'
-): Promise<{ path: string | null; error: string | null }> => {
+  folder: string = 'accessories'
+): Promise<{ path: string | null; publicUrl: string | null; error: string | null }> => {
   if (!isSupabaseConfigured) {
-    return { path: null, error: 'Supabase is not configured yet.' };
+    return { path: null, publicUrl: null, error: 'Supabase is not configured yet.' };
   }
 
   try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-    const filePath = `${folder}/${fileName}`;
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const cleanBaseName = file.name
+      .substring(0, file.name.lastIndexOf('.'))
+      .replace(/[^a-zA-Z0-9-_]/g, '_')
+      .substring(0, 20);
+    const fileName = `${Date.now()}_${cleanBaseName}.${fileExt}`;
+    const cleanFolder = folder.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+    const filePath = `${cleanFolder}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('products')
-      .upload(filePath, file, { cacheControl: '3600', upsert: false });
+      .upload(filePath, file, { cacheControl: '3600', upsert: true });
 
     if (uploadError) {
-      return { path: null, error: uploadError.message };
+      return { path: null, publicUrl: null, error: uploadError.message };
     }
 
-    return { path: filePath, error: null };
+    const { data } = supabase.storage.from('products').getPublicUrl(filePath);
+    return { path: filePath, publicUrl: data?.publicUrl || null, error: null };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Upload failed';
-    return { path: null, error: msg };
+    return { path: null, publicUrl: null, error: msg };
   }
 };

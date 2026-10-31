@@ -12,7 +12,9 @@ export type ViewType =
   | 'contact'
   | 'account'
   | 'verify'
-  | 'admin';
+  | 'admin'
+  | 'admin-login'
+  | 'admin-dashboard';
 
 interface NavigationParams {
   productId?: string;
@@ -39,15 +41,19 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [params, setParams] = useState<NavigationParams>({});
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
-  // Parse hash route on initial load and popstate
-  const parseHash = useCallback(() => {
+  // Parse path and hash routes on initial load and popstate
+  const parseRoute = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const hasVerifyParams = searchParams.has('token_hash') || (searchParams.get('type') === 'signup') || (searchParams.get('type') === 'email');
-    const hash = window.location.hash.replace(/^#\/?/, '');
+    
+    // Normalize pathname and hash
+    const pathname = window.location.pathname.toLowerCase().replace(/^\/+|\/+$/g, '');
+    const hash = window.location.hash.toLowerCase().replace(/^#\/?/, '').replace(/\/+$/g, '');
 
     // Check for email verification indicators in query or hash
     if (
       hash.startsWith('verify') ||
+      pathname.startsWith('verify') ||
       hash.includes('type=signup') ||
       hash.includes('type=email_confirmation') ||
       hasVerifyParams
@@ -57,13 +63,35 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       return;
     }
 
-    if (!hash) {
+    // Determine target route from pathname (direct URL) or hash
+    const primaryRoute = pathname.startsWith('admin') ? pathname : (hash || pathname);
+
+    if (primaryRoute === 'admin/login' || primaryRoute === 'admin-login') {
+      setCurrentView('admin-login');
+      setParams({});
+      return;
+    }
+
+    if (primaryRoute === 'admin/dashboard' || primaryRoute === 'admin-dashboard') {
+      setCurrentView('admin-dashboard');
+      setParams({});
+      return;
+    }
+
+    if (primaryRoute === 'admin') {
+      setCurrentView('admin-dashboard');
+      setParams({});
+      return;
+    }
+
+    if (!hash && !pathname) {
       setCurrentView('home');
       setParams({});
       return;
     }
 
-    const [route, ...rest] = hash.split('/');
+    const activeRaw = hash || pathname;
+    const [route, ...rest] = activeRaw.split('/');
     const identifier = rest.join('/');
 
     if (route === 'verify') {
@@ -91,8 +119,10 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setCurrentView('contact');
     } else if (route === 'account' || route === 'reset-password') {
       setCurrentView('account');
-    } else if (route === 'admin') {
-      setCurrentView('admin');
+    } else if (route === 'admin-login') {
+      setCurrentView('admin-login');
+    } else if (route === 'admin-dashboard' || route === 'admin') {
+      setCurrentView('admin-dashboard');
     } else if (route === 'order-confirmation' || route === 'order') {
       setCurrentView('order-confirmation');
       const urlParams = new URLSearchParams(window.location.search);
@@ -110,30 +140,34 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   useEffect(() => {
-    parseHash();
-    window.addEventListener('popstate', parseHash);
-    window.addEventListener('hashchange', parseHash);
+    parseRoute();
+    window.addEventListener('popstate', parseRoute);
+    window.addEventListener('hashchange', parseRoute);
     return () => {
-      window.removeEventListener('popstate', parseHash);
-      window.removeEventListener('hashchange', parseHash);
+      window.removeEventListener('popstate', parseRoute);
+      window.removeEventListener('hashchange', parseRoute);
     };
-  }, [parseHash]);
+  }, [parseRoute]);
 
   const navigateTo = useCallback((view: ViewType, newParams: NavigationParams = {}) => {
     setCurrentView(view);
     setParams(newParams);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    let hash = `#${view}`;
-    if (view === 'product' && newParams.productId) {
-      hash = `#product/${newParams.productId}`;
+    let newUrl = `#${view}`;
+    if (view === 'admin-login') {
+      newUrl = window.location.pathname.startsWith('/admin') ? '/admin/login' : '#admin/login';
+    } else if (view === 'admin-dashboard' || view === 'admin') {
+      newUrl = window.location.pathname.startsWith('/admin') ? '/admin/dashboard' : '#admin/dashboard';
+    } else if (view === 'product' && newParams.productId) {
+      newUrl = `#product/${newParams.productId}`;
     } else if (view === 'order-confirmation' && newParams.orderId) {
-      hash = `#order-confirmation/${newParams.orderId}`;
+      newUrl = `#order-confirmation/${newParams.orderId}`;
     } else if (view === 'home') {
-      hash = '#';
+      newUrl = window.location.pathname.startsWith('/admin') ? '/' : '#';
     }
 
-    window.history.pushState(null, '', hash);
+    window.history.pushState(null, '', newUrl);
   }, []);
 
   const openSearchModal = useCallback(() => setIsSearchModalOpen(true), []);

@@ -59,7 +59,7 @@ export const createOrderInDatabase = async (params: {
         },
         delivery_method: deliveryMethod,
         payment_method: paymentMethod,
-        payment_status: 'Paid',
+        payment_status: 'Pending',
         order_status: 'Processing',
         subtotal,
         discount,

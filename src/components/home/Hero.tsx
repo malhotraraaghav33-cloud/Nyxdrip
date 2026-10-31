@@ -41,16 +41,30 @@ export const Hero: React.FC = () => {
       setIsDataSaver(true);
     }
 
-    const timer = setTimeout(() => setIsRevealed(true), 120);
+    // Synchronize reveal with BrandLoader if intro overlay is showing
+    const hasSeenIntro = typeof window !== 'undefined' && sessionStorage.getItem('nyxdrip_intro_shown');
+    const introDelay = hasSeenIntro ? 120 : 1150;
+    const revealTimer = setTimeout(() => setIsRevealed(true), introDelay);
 
+    const onIntroLeaving = () => setIsRevealed(true);
+    window.addEventListener('nyxdrip:intro-leaving', onIntroLeaving);
+
+    let ticking = false;
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setScrollY(window.scrollY);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       mediaQuery.removeEventListener('change', listener);
-      clearTimeout(timer);
+      clearTimeout(revealTimer);
+      window.removeEventListener('nyxdrip:intro-leaving', onIntroLeaving);
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);

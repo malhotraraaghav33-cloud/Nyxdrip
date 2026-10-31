@@ -17,11 +17,15 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({ onComplete }) => {
     }
 
     const t1 = setTimeout(() => setFadeState('holding'), 400);
-    const t2 = setTimeout(() => setFadeState('leaving'), 1100);
+    const t2 = setTimeout(() => {
+      setFadeState('leaving');
+      window.dispatchEvent(new CustomEvent('nyxdrip:intro-leaving'));
+    }, 1100);
     const t3 = setTimeout(() => {
       setFadeState('done');
       sessionStorage.setItem('nyxdrip_intro_shown', 'true');
       onComplete?.();
+      window.dispatchEvent(new CustomEvent('nyxdrip:intro-complete'));
     }, 1500);
 
     return () => {

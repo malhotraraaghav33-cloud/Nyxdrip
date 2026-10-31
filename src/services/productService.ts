@@ -7,6 +7,11 @@ let cachedProducts: Product[] | null = null;
 let lastFetchTime = 0;
 const CACHE_TTL_MS = 60 * 1000; // 1 minute client cache
 
+export const invalidateProductsCache = () => {
+  cachedProducts = null;
+  lastFetchTime = 0;
+};
+
 /**
  * Transforms Supabase database row to frontend Product type
  */

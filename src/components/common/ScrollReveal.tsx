@@ -15,7 +15,7 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
   delay = 0,
   duration = 600,
   className = '',
-  threshold = 0.15,
+  threshold = 0.05,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
@@ -29,6 +29,16 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
       return;
     }
 
+    const currentEl = elementRef.current;
+    if (!currentEl) return;
+
+    // Check if element is already inside the viewport upon mount
+    const rect = currentEl.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      setIsVisible(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -38,17 +48,14 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
       },
       {
         threshold,
-        rootMargin: '0px 0px -40px 0px',
+        rootMargin: '0px 0px -15px 0px',
       }
     );
 
-    const currentEl = elementRef.current;
-    if (currentEl) {
-      observer.observe(currentEl);
-    }
+    observer.observe(currentEl);
 
     return () => {
-      if (currentEl) observer.unobserve(currentEl);
+      observer.disconnect();
     };
   }, [threshold]);
 

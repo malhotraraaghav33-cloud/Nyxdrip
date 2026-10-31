@@ -10,25 +10,38 @@ export const RouteTransition: React.FC<RouteTransitionProps> = ({ currentView, c
   const [displayChildren, setDisplayChildren] = useState(children);
   const [transitionStage, setTransitionStage] = useState<'visible' | 'fading'>('visible');
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const prevViewRef = React.useRef(currentView);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
   useEffect(() => {
     if (prefersReducedMotion) {
       setDisplayChildren(children);
+      prevViewRef.current = currentView;
       return;
     }
 
-    setTransitionStage('fading');
-    const timer = setTimeout(() => {
-      setDisplayChildren(children);
-      setTransitionStage('visible');
-    }, 140);
+    // Only initiate a route fade transition if the currentView has changed
+    if (prevViewRef.current !== currentView) {
+      prevViewRef.current = currentView;
+      setTransitionStage('fading');
+      const timer = setTimeout(() => {
+        setDisplayChildren(children);
+        setTransitionStage('visible');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }, 140);
 
-    return () => clearTimeout(timer);
+      return () => clearTimeout(timer);
+    } else {
+      // When currentView is unchanged, update children immediately without fading out
+      setDisplayChildren(children);
+    }
   }, [currentView, children, prefersReducedMotion]);
 
   if (prefersReducedMotion) {
