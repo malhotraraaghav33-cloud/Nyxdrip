@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { basic, configured, dbFetch, json, readJson, type Request, type Response } from './_lib/payments.js';
+import { basic, configured, dbFetch, json, readJson, type Request, type Response } from './_lib/payments';
 
 // Creates a *database-backed pending order*, reserves inventory atomically,
 // and then creates the matching Razorpay order for the server-calculated amount.
