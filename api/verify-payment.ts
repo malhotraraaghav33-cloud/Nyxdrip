@@ -1,90 +1,55 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import { configured, dbFetch, finalize, json, orderForProvider, paymentCheck, readJson, verifyHmac, type Request, type Response } from './_lib/payments';
 
-// A successful result proves only a captured TEST payment. It does NOT create
-// a Supabase order, reserve stock, or authorize fulfilment.
-type Request = IncomingMessage & { method?: string; body?: unknown };
+// An on-screen success is reported only after a captured payment is checked
+// against Razorpay AND the order is finalized in Supabase.
+export default async function handler(req: Request, res: Response) {
+  if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
+  const config = configured();
+  if (!config.enabled) return json(res, 503, { error: 'Live payments are not activated' });
 
-const send = (res: ServerResponse, status: number, data: unknown) => {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', 'no-store');
-  res.end(JSON.stringify(data));
-};
+  let input: any;
+  try { input = await readJson(req, 8192); }
+  catch { return json(res, 400, { error: 'Invalid request' }); }
 
-const parseBody = async (req: Request): Promise<any> => {
-  if (req.body && typeof req.body === 'object') return req.body;
-  if (typeof req.body === 'string') return JSON.parse(req.body);
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(Buffer.from(chunk));
-  return JSON.parse(Buffer.concat(chunks).toString('utf-8') || '{}');
-};
+  const orderId = input?.razorpay_order_id;
+  const paymentId = input?.razorpay_payment_id;
+  const signature = input?.razorpay_signature;
+  const guestToken = input?.guestAccessToken;
 
-export default async function handler(req: Request, res: ServerResponse) {
-  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
-
-  const keyId = process.env.RAZORPAY_KEY_ID || '';
-  const secret = process.env.RAZORPAY_KEY_SECRET || '';
-  if (process.env.RAZORPAY_TEST_MODE_ENABLED !== 'true' ||
-      !keyId.startsWith('rzp_test_') || !secret) {
-    return send(res, 503, { error: 'Test checkout is not configured' });
+  if (typeof orderId !== 'string' || !/^order_[A-Za-z0-9]{4,90}$/.test(orderId) ||
+      typeof paymentId !== 'string' || !/^pay_[A-Za-z0-9]{4,90}$/.test(paymentId) ||
+      typeof signature !== 'string' ||
+      typeof guestToken !== 'string' || guestToken.length < 20 || guestToken.length > 256) {
+    return json(res, 400, { error: 'Missing payment verification fields' });
   }
 
-  let body: any;
-  try {
-    body = await parseBody(req);
-  } catch {
-    return send(res, 400, { error: 'Invalid JSON' });
-  }
-
-  const orderId = body?.razorpay_order_id;
-  const paymentId = body?.razorpay_payment_id;
-  const signature = body?.razorpay_signature;
-  if (typeof orderId !== 'string' || !/^order_[A-Za-z0-9]{4,80}$/.test(orderId) ||
-      typeof paymentId !== 'string' || !/^pay_[A-Za-z0-9]{4,80}$/.test(paymentId) ||
-      typeof signature !== 'string' || !/^[0-9a-f]{64}$/i.test(signature)) {
-    return send(res, 400, { error: 'Missing or malformed verification fields' });
-  }
-
-  const expected = createHmac('sha256', secret)
-    .update(orderId + '|' + paymentId).digest();
-  const supplied = Buffer.from(signature, 'hex');
-  if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
-    return send(res, 400, { error: 'Payment signature mismatch' });
+  if (!verifyHmac(orderId + '|' + paymentId, signature, config.keySecret)) {
+    return json(res, 400, { error: 'Payment signature mismatch' });
   }
 
   try {
-    const authorization = 'Basic ' + Buffer.from(keyId + ':' + secret).toString('base64');
-    const headers = { Authorization: authorization, Accept: 'application/json' };
-    const [paymentResponse, orderResponse] = await Promise.all([
-      fetch('https://api.razorpay.com/v1/payments/' + encodeURIComponent(paymentId), {
-        headers, signal: AbortSignal.timeout(10000),
-      }),
-      fetch('https://api.razorpay.com/v1/orders/' + encodeURIComponent(orderId), {
-        headers, signal: AbortSignal.timeout(10000),
-      }),
-    ]);
-    if (!paymentResponse.ok || !orderResponse.ok) {
-      return send(res, 502, { error: 'Could not confirm payment with Razorpay' });
-    }
-    const [payment, order] = await Promise.all([
-      paymentResponse.json(), orderResponse.json(),
-    ]);
-
-    if (payment.order_id !== orderId || payment.id !== paymentId ||
-        payment.status !== 'captured' || payment.currency !== 'INR' ||
-        order.id !== orderId || order.currency !== 'INR' ||
-        Number(payment.amount) !== Number(order.amount) ||
-        !String(order.receipt || '').startsWith('NYXTEST-')) {
-      return send(res, 409, { error: 'Test payment is not captured or does not match the order' });
+    const order = await orderForProvider(orderId);
+    if (!order || order.guest_access_token !== guestToken ||
+        order.charged_currency !== 'INR' ||
+        !Number.isFinite(Number(order.total)) || Number(order.total) <= 0) {
+      return json(res, 404, { error: 'Order not found or not authorized' });
     }
 
-    return send(res, 200, {
-      success: true, testMode: true, payment_id: payment.id,
-      amount: payment.amount,
-      message: 'Test payment verified. No fulfilment order was created.',
+    if (!(await paymentCheck(orderId, paymentId, order))) {
+      return json(res, 409, { error: 'Payment not captured or amount mismatch' });
+    }
+
+    if (order.payment_status === 'paid' && order.provider_payment_id && order.provider_payment_id !== paymentId) {
+      return json(res, 409, { error: 'Order already paid by another payment' });
+    }
+    const result = await finalize(order, paymentId);
+    return json(res, 200, {
+      success: true, orderNumber: order.order_number,
+      orderId: order.id, paymentStatus: 'paid', alreadyPaid: Boolean(result?.already_paid),
     });
   } catch {
-    return send(res, 502, { error: 'Payment verification is temporarily unavailable' });
+    // Do not display Paid until DB is committed. Razorpay may have captured
+    // money; a webhook or merchant reconciliation can complete the order.
+    return json(res, 503, { error: 'Payment cannot yet be confirmed in the order database. Check Razorpay Dashboard before retrying.' });
   }
 }

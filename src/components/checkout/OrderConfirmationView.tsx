@@ -33,6 +33,23 @@ export const OrderConfirmationView: React.FC = () => {
     }
   };
 
+  // Historical simulated orders stored only in localStorage are NOT proof
+  // of payment. The new live Razorpay flow displays its verified DB receipt inline.
+  if (!order || (order as Order & { paymentVerified?: boolean }).paymentVerified !== true) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0D] text-[#F5F5F7] py-24 text-center">
+        <div className="max-w-xl mx-auto p-8 border border-[#2A2A32] bg-[#15151B] space-y-4">
+          <h1 className="font-display text-2xl font-bold">Order Status Unverified</h1>
+          <p className="text-sm text-[#C7CBD3]">
+            A previous checkout confirmation saved in your browser does not prove payment.
+            Please check with NYXDRIP support before dispatch or making another payment.
+          </p>
+          <button onClick={() => navigateTo('shop')} className="px-6 py-3 bg-[#8B5CF6] text-white text-xs font-bold uppercase">Continue Shopping</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0A0D] text-[#F5F5F7] py-16 sm:py-24">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { Product, CartItem, Coupon } from '../types';
 import { useToast } from './ToastContext';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { useProducts } from './ProductContext';
 import { validateCouponCode } from '../services/couponService';
 import {
   getProductByKey,
@@ -56,6 +57,7 @@ const STANDARD_SHIPPING_FEE = 99;
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { showToast } = useToast();
+  const { products } = useProducts();
 
   // Active authenticated user ID
   const [userId, setUserId] = useState<string | null>(null);
@@ -118,7 +120,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Keep previousStoredItemsRef in sync with storedItems
   useEffect(() => {
     previousStoredItemsRef.current = storedItems;
-  }, [storedItems]);
+  }, [storedItems, products]);
 
   // ============================================================================
   // DERIVED ITEMS & TOTALS (NEVER TRUST CLIENT-SUPPLIED PRICES)
@@ -340,6 +342,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
    */
   const addToCart = useCallback(
     (product: Product, quantity = 1, selectedVariant?: string) => {
+      // The product context updates as Supabase stock changes. Never add
+      // a sold-out product or trust stale product-card stock.
+      const current = products.find(p => p.slug === product.slug) || product;
+      if (current.stock <= 0 || current.priceIsPlaceholder || current.price <= 0) {
+        showToast('Unavailable', 'This item is currently out of stock.', 'error');
+        return;
+      }
+      product = current;
       const productKey = product.id;
       const validQty = Math.max(MIN_ITEM_QUANTITY, Math.min(quantity, MAX_ITEM_QUANTITY));
       const previousState = previousStoredItemsRef.current;
@@ -394,7 +404,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })();
       }
     },
-    [userId, showToast, triggerPulse, getEnsureCartId]
+    [userId, showToast, triggerPulse, getEnsureCartId, products]
   );
 
   /**

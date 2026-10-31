@@ -50,6 +50,20 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     loadData();
+
+    // Pick up inventory edits without needing a redeploy or hard refresh.
+    // Focus/visibility refresh makes returning shoppers see recent stock.
+    const refresh = () => {
+      if (document.visibilityState === 'visible') loadData(true);
+    };
+    const poll = window.setInterval(refresh, 30000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearInterval(poll);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
   }, [loadData]);
 
   const refreshProducts = useCallback(async () => {

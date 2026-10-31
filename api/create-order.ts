@@ -1,133 +1,147 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import { randomUUID } from 'node:crypto';
+import { basic, configured, dbFetch, json, readJson, type Request, type Response } from './_lib/payments';
 
-// TEST MODE ONLY. This endpoint deliberately does not create a fulfilment order.
-// A trusted order database + webhook must be added before accepting live money.
-type Request = IncomingMessage & { method?: string; body?: unknown };
-type Response = ServerResponse;
-
-const send = (res: Response, status: number, body: unknown) => {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', 'no-store');
-  res.end(JSON.stringify(body));
-};
-
-type Line = { productId: string; quantity: number };
-const parseLines = (value: unknown): Line[] | null => {
-  if (!Array.isArray(value) || value.length < 1 || value.length > 20) return null;
-  const lines: Line[] = [];
-  const ids = new Set<string>();
-  for (const item of value) {
-    const productId = item?.productId;
-    const quantity = item?.quantity;
-    if (typeof productId !== 'string' ||
-        !/^[a-zA-Z0-9_-]{1,90}$/.test(productId) ||
-        !Number.isInteger(quantity) || quantity < 1 || quantity > 10 ||
-        ids.has(productId)) return null;
-    ids.add(productId);
-    lines.push({ productId, quantity });
-  }
-  return lines;
-};
-
-const parseBody = async (req: Request): Promise<any> => {
-  if (req.body && typeof req.body === 'object') return req.body;
-  if (typeof req.body === 'string') return JSON.parse(req.body);
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(Buffer.from(chunk));
-  return JSON.parse(Buffer.concat(chunks).toString('utf-8') || '{}');
-};
-
+// Creates a *database-backed pending order*, reserves inventory atomically,
+// and then creates the matching Razorpay order for the server-calculated amount.
 export default async function handler(req: Request, res: Response) {
-  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
+  if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
+  const config = configured();
+  if (!config.enabled) return json(res, 503, { error: 'Live payments are not activated' });
 
-  const keyId = process.env.RAZORPAY_KEY_ID || '';
-  const secret = process.env.RAZORPAY_KEY_SECRET || '';
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-  const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+  let payload: any;
+  try { payload = await readJson(req); }
+  catch { return json(res, 400, { error: 'Invalid request' }); }
 
-  if (process.env.RAZORPAY_TEST_MODE_ENABLED !== 'true' ||
-      !keyId.startsWith('rzp_test_') || !secret || !supabaseUrl || !supabaseKey) {
-    return send(res, 503, { error: 'Test checkout is not configured' });
+  const address = payload?.shippingAddress;
+  const lines = payload?.items;
+  const deliveryMethod = payload?.deliveryMethod;
+  const email = address?.email;
+  const name = String(address?.firstName || '').trim() + ' ' + String(address?.lastName || '').trim();
+  const phone = address?.phone;
+
+  if (!address || typeof address !== 'object' ||
+      typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      typeof phone !== 'string' || !/^\d{10}$/.test(phone) ||
+      name.trim().length < 2 || name.length > 120 ||
+      typeof address.address !== 'string' || address.address.length < 5 || address.address.length > 300 ||
+      typeof address.city !== 'string' || address.city.length < 2 || address.city.length > 100 ||
+      typeof address.state !== 'string' || address.state.length < 2 || address.state.length > 100 ||
+      !/^\d{6}$/.test(String(address.pincode || '')) ||
+      address.country !== 'India' ||
+      !['standard', 'express'].includes(deliveryMethod) ||
+      !Array.isArray(lines) || lines.length < 1 || lines.length > 20) {
+    return json(res, 400, { error: 'Enter complete, valid shipping details' });
   }
 
-  let body: any;
+  const seen = new Set<string>();
+  const items: Array<{ product_id: string; quantity: number; selectedVariant: string }> = [];
+  for (const line of lines) {
+    const productId = line?.productId;
+    const quantity = line?.quantity;
+    const variant = line?.selectedVariant || 'Standard';
+    if (typeof productId !== 'string' || !/^[a-zA-Z0-9_-]{1,90}$/.test(productId) ||
+        seen.has(productId) || !Number.isInteger(quantity) || quantity < 1 || quantity > 10 ||
+        typeof variant !== 'string' || variant.length > 90) {
+      return json(res, 400, { error: 'Invalid cart contents' });
+    }
+    seen.add(productId);
+    items.push({ product_id: productId, quantity, selectedVariant: variant });
+  }
+
+  const couponCode = payload?.couponCode;
+  if (couponCode != null && (typeof couponCode !== 'string' || !/^[A-Z0-9_-]{1,24}$/i.test(couponCode))) {
+    return json(res, 400, { error: 'Invalid coupon' });
+  }
+  const idempotencyKey = typeof payload?.idempotencyKey === 'string' &&
+    /^[A-Za-z0-9_-]{12,90}$/.test(payload.idempotencyKey)
+    ? payload.idempotencyKey : randomUUID();
+
+  let pending: any;
   try {
-    body = await parseBody(req);
+    pending = await dbFetch('rpc/create_pending_order', {
+      method: 'POST',
+      body: {
+        p_user_id: null,
+        p_provider: 'razorpay',
+        p_idempotency_key: idempotencyKey,
+        p_coupon_code: couponCode || null,
+        p_shipping_address: address,
+        p_delivery_method: deliveryMethod,
+        p_charged_currency: 'INR',
+        p_guest_email: email,
+        p_guest_name: name.trim(),
+        p_guest_phone: phone,
+        p_items: items,
+      },
+    });
   } catch {
-    return send(res, 400, { error: 'Invalid JSON payload' });
+    return json(res, 503, { error: 'Order database is not ready or cart cannot be reserved' });
   }
 
-  const lines = parseLines(body?.items);
-  if (!lines || !['standard', 'express'].includes(body?.deliveryMethod)) {
-    return send(res, 400, { error: 'Invalid items or delivery method' });
-  }
-  if (body?.couponCode) {
-    return send(res, 400, { error: 'Coupons are not supported in payment test mode' });
+  const totalPaise = Math.round(Number(pending?.total) * 100);
+  if (!pending?.order_id || !pending?.order_number || !pending?.guest_access_token ||
+      !Number.isSafeInteger(totalPaise) || totalPaise < 100 || totalPaise > 20000000) {
+    return json(res, 503, { error: 'Could not validate server-calculated order total' });
   }
 
-  // Never trust frontend prices or totals. Prices come only from public Supabase products.
-  let subtotalPaise = 0;
-  try {
-    const base = new URL(supabaseUrl);
-    if (base.protocol !== 'https:' || base.pathname !== '/') throw new Error('Invalid Supabase URL');
-
-    for (const line of lines) {
-      const url = new URL('/rest/v1/products', base.origin);
-      url.searchParams.set('select', 'id,price,stock,is_active');
-      url.searchParams.set('id', 'eq.' + line.productId);
-      url.searchParams.set('limit', '1');
-      const response = await fetch(url, {
-        headers: { apikey: supabaseKey, Accept: 'application/json' },
-        signal: AbortSignal.timeout(7000),
-      });
-      if (!response.ok) throw new Error('Catalog lookup failed');
-      const rows = await response.json();
-      const product = rows?.[0];
-      const price = Number(product?.price);
-      if (!product || product.is_active !== true || !Number.isFinite(price) ||
-          price <= 0 || price > 100000 || !Number.isInteger(Number(product.stock)) ||
-          Number(product.stock) < line.quantity) {
-        return send(res, 400, { error: 'A product is unavailable or out of stock' });
+  // Reused pending orders must be verified as belonging to this guest token.
+  // An existing provider order can be reused if its amount matches the DB total.
+  if (pending.is_existing && pending.provider_order_id) {
+    try {
+      const response = await fetch(
+        'https://api.razorpay.com/v1/orders/' + encodeURIComponent(pending.provider_order_id),
+        { headers: { Authorization: basic(config.keyId, config.keySecret) }, signal: AbortSignal.timeout(12000) },
+      );
+      const providerOrder = response.ok ? await response.json() : null;
+      if (providerOrder?.amount === totalPaise && providerOrder?.currency === 'INR') {
+        return json(res, 200, {
+          order_id: providerOrder.id, amount: totalPaise, currency: 'INR', key_id: config.keyId,
+          orderNumber: pending.order_number, guestAccessToken: pending.guest_access_token,
+        });
       }
-      subtotalPaise += Math.round(price * 100) * line.quantity;
-    }
+    } catch { /* fail closed below */ }
+    return json(res, 409, { error: 'Existing order cannot be safely resumed' });
+  }
 
-    const shippingPaise = (subtotalPaise >= 99900 ? 0 : 9900) +
-      (body.deliveryMethod === 'express' ? 15000 : 0);
-    const amount = subtotalPaise + shippingPaise;
+  // Avoid unintentionally recharging an existing pending order with no provider ID.
+  if (pending.is_existing) return json(res, 409, { error: 'Existing checkout is incomplete. Please contact support.' });
 
-    if (!Number.isSafeInteger(amount) || amount < 100 || amount > 20000000) {
-      return send(res, 400, { error: 'Invalid order amount' });
-    }
-
-    const receipt = 'NYXTEST-' + Date.now().toString(36) + '-' +
-      crypto.randomUUID().slice(0, 8);
+  try {
     const response = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
-        Authorization: 'Basic ' + Buffer.from(keyId + ':' + secret).toString('base64'),
+        Authorization: basic(config.keyId, config.keySecret),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        amount, currency: 'INR', receipt,
-        notes: { purpose: 'NYXDRIP TEST ONLY - NOT A FULFILMENT ORDER' },
+        amount: totalPaise,
+        currency: 'INR',
+        receipt: String(pending.order_number).slice(0, 40),
+        notes: { nyx_order_id: pending.order_id, order_number: pending.order_number },
       }),
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(12000),
     });
-
-    if (response.status === 401) return send(res, 401, { error: 'Razorpay test credentials are invalid' });
-    if (!response.ok) return send(res, 502, { error: 'Razorpay could not create a test order' });
+    if (response.status === 401) return json(res, 503, { error: 'Merchant payment credentials require attention' });
+    if (!response.ok) throw new Error('RAZORPAY_ORDER_FAILED');
     const order = await response.json();
-    if (!order?.id || order.amount !== amount || order.currency !== 'INR') {
-      return send(res, 502, { error: 'Unexpected Razorpay order response' });
+    if (!/^order_[A-Za-z0-9]+$/.test(String(order?.id || '')) ||
+        order.amount !== totalPaise || order.currency !== 'INR') throw new Error('INVALID_RAZORPAY_ORDER');
+
+    const updated = await dbFetch('orders?id=eq.' + encodeURIComponent(pending.order_id) + '&payment_status=eq.pending', {
+      method: 'PATCH',
+      body: { provider_order_id: order.id },
+    });
+    if (!Array.isArray(updated) || updated.length !== 1 || updated[0].provider_order_id !== order.id) {
+      throw new Error('ORDER_LINK_FAILED');
     }
 
-    return send(res, 200, {
-      order_id: order.id, amount: order.amount, currency: order.currency,
-      key_id: keyId, subtotalPaise, shippingPaise, testMode: true,
+    return json(res, 200, {
+      order_id: order.id, amount: order.amount, currency: 'INR', key_id: config.keyId,
+      orderNumber: pending.order_number, guestAccessToken: pending.guest_access_token,
     });
   } catch {
-    return send(res, 502, { error: 'Could not validate the catalog or initialize Razorpay test checkout' });
+    // An orphaned Razorpay order does not charge anyone: no checkout link returned.
+    // Reservation expiry migration releases abandoned pending orders.
+    return json(res, 502, { error: 'Could not link payment to your order. No payment was initiated.' });
   }
 }

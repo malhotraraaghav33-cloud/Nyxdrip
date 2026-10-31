@@ -1,5 +1,5 @@
 -- ============================================================================
--- NYX DRIPSTORE - CLIENT CONFIRMED PRICES & 15-PRODUCT CATALOG MIGRATION
+-- NYX DRIPSTORE - CLIENT CONFIRMED PRICES & 17-PRODUCT CATALOG MIGRATION
 -- Migration: 20261004_update_client_confirmed_prices.sql
 -- Idempotent & Non-Destructive: Run in Supabase SQL Editor.
 -- Does NOT drop tables, preserves order histories & cart items.
@@ -13,6 +13,7 @@ ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL 
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT ARRAY[]::TEXT[];
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS original_price NUMERIC(10, 2);
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price_is_placeholder BOOLEAN DEFAULT false;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_new_arrival BOOLEAN NOT NULL DEFAULT false;
 
 -- Ensure UNIQUE index on slug
 CREATE UNIQUE INDEX IF NOT EXISTS idx_products_slug ON public.products (slug);
@@ -61,11 +62,13 @@ WHERE slug NOT IN (
     'blue-metallic-wallet',
     'red-cosmic-star-necklace',
     'y2k-heart-necklace',
-    'snake-cross-necklace'
+    'snake-cross-necklace',
+    'chrome-earbuds-c-type',
+    'chrome-silver-rimless-glass'
 );
 
 -- ----------------------------------------------------------------------------
--- STEP 4: UPSERT THE EXACT 15 CLIENT-CONFIRMED PRODUCTS WITH CONFIRMED PRICES
+-- STEP 4: UPSERT THE EXACT 17 CLIENT-CONFIRMED PRODUCTS WITH CONFIRMED PRICES
 -- ----------------------------------------------------------------------------
 INSERT INTO public.products (
     slug,
@@ -349,6 +352,42 @@ INSERT INTO public.products (
     true,
     ARRAY[
         '/nyxdrip2.0/Snake cross nekclace/IMG_20261002_125440_660.jpg'
+    ]::TEXT[]
+),
+-- 16. Chrome Earbuds (C Type) — ₹499 (added later)
+(
+    'chrome-earbuds-c-type',
+    'Chrome Earbuds (C Type)',
+    'Accessories',
+    'Chrome Earbuds (C Type) from the NYx DRIPstore collection. Heavy chrome finished wired earphones with USB Type-C interface.',
+    499.00,
+    NULL,
+    false,
+    NULL,
+    0,
+    true,
+    true,
+    ARRAY[
+        '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.24.39_PM_db92a737.jpeg',
+        '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.24.37_PM_b310b39e.jpeg'
+    ]::TEXT[]
+),
+-- 17. Chrome Silver Rimless Glass — ₹599 (added later)
+(
+    'chrome-silver-rimless-glass',
+    'Chrome Silver Rimless Glass',
+    'Accessories',
+    'Chrome Silver Rimless Glass from the NYx DRIPstore collection. Sleek rimless cyber shades with sculptural metallic temples.',
+    599.00,
+    NULL,
+    false,
+    NULL,
+    0,
+    true,
+    true,
+    ARRAY[
+        '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.25.27_PM_fd4c30d4.jpeg',
+        '/assets/aistudio/Screenshot_2026-10-30_180247_6b8d3fa6.png'
     ]::TEXT[]
 )
 ON CONFLICT (slug) DO UPDATE SET
