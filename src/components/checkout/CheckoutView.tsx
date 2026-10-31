@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, Loader2, CreditCard, Smartphone, Building2, Wallet, Globe, MapPin, User, Mail, Lock, Phone, MessageSquare } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useNavigation } from '../../context/NavigationContext';
@@ -13,7 +13,7 @@ import { fetchUserAddresses, saveUserAddress, UserAddress } from '../../services
 import { AccountModal } from '../account/AccountModal';
 import { buildWhatsAppOrderUrl } from '../../utils/whatsappOrder';
 
-// Razorpay hosted test checkout; live orders and fulfilment stay disabled.
+// Razorpay Standard Checkout. Every charge and order is verified server-side.
 export const CheckoutView: React.FC = () => {
   const { items, subtotal, discount, shipping, total, clearCart, appliedCoupon } = useCart();
   const { navigateTo } = useNavigation();
@@ -74,7 +74,9 @@ export const CheckoutView: React.FC = () => {
   const [orderState, setOrderState] = useState<OrderStatus>('Pending');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentFeedback, setPaymentFeedback] = useState('');
-  const testCheckoutEnabled = import.meta.env.VITE_RAZORPAY_TEST_MODE_ENABLED === 'true';
+  const liveCheckoutEnabled = import.meta.env.VITE_RAZORPAY_LIVE_ENABLED === 'true';
+  const checkoutKeyRef = useRef<string | null>(null);
+  const [confirmedOrder, setConfirmedOrder] = useState<{ number: string; total: number } | null>(null);
 
   // Delivery fee adjustments
   const finalShipping = deliveryMethod === 'express' ? shipping + 150 : shipping;
@@ -127,12 +129,8 @@ export const CheckoutView: React.FC = () => {
       window.scrollTo({ top: 150, behavior: 'smooth' });
       return;
     }
-    if (!testCheckoutEnabled) {
-      showToast('Checkout not available', 'Online payments are disabled until secure order tracking is ready.', 'error');
-      return;
-    }
-    if (appliedCoupon) {
-      showToast('Coupon not supported', 'Remove the coupon to test Razorpay checkout.', 'error');
+    if (!liveCheckoutEnabled) {
+      showToast('Checkout not yet available', 'Secure payments have not been activated.', 'error');
       return;
     }
 
@@ -140,26 +138,34 @@ export const CheckoutView: React.FC = () => {
     setOrderState('Processing');
     try {
       const stock = await validateCartStock(items);
-      if (!stock.valid) throw new Error('An item in the bag is out of stock.');
+      if (!stock.valid) throw new Error('A product is out of stock.');
+
+      // Keep one idempotency key for retries so the server does not double-create orders.
+      if (!checkoutKeyRef.current) checkoutKeyRef.current = crypto.randomUUID();
 
       const response = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: items.map((item) => ({
+          items: items.map(item => ({
             productId: item.product.id,
             quantity: item.quantity,
+            selectedVariant: item.selectedVariant || 'Standard',
           })),
+          shippingAddress: formData,
           deliveryMethod,
+          couponCode: appliedCoupon?.code || null,
+          idempotencyKey: checkoutKeyRef.current,
         }),
       });
-      const order = await response.json();
-      if (!response.ok || !order?.testMode || !order?.order_id || !order?.key_id) {
-        throw new Error(order?.error || 'Cannot create a test payment.');
+      const order = await response.json().catch(() => ({}));
+      if (!response.ok || !order?.order_id || !order?.key_id ||
+          !order?.guestAccessToken || !order?.orderNumber ||
+          !Number.isSafeInteger(order?.amount) || order.amount < 100) {
+        throw new Error(order?.error || 'Could not create your order');
       }
-
       if (!(await loadRazorpayScript()) || !(window as any).Razorpay) {
-        throw new Error('Razorpay Checkout could not be loaded.');
+        throw new Error('Razorpay Checkout could not load.');
       }
       const Razorpay = (window as any).Razorpay;
       const checkout = new Razorpay({
@@ -168,7 +174,7 @@ export const CheckoutView: React.FC = () => {
         currency: order.currency,
         order_id: order.order_id,
         name: 'NYXDRIP',
-        description: 'TEST MODE ONLY — no fulfilment order is created',
+        description: 'Order ' + order.orderNumber,
         prefill: {
           name: [formData.firstName, formData.lastName].join(' '),
           email: formData.email,
@@ -177,7 +183,7 @@ export const CheckoutView: React.FC = () => {
         modal: {
           ondismiss: () => {
             setOrderState('Pending');
-            showToast('Checkout cancelled', 'No fulfilment order was created.', 'info');
+            showToast('Checkout closed', 'No new payment was confirmed.', 'info');
           },
         },
         handler: async (result: any) => {
@@ -190,34 +196,55 @@ export const CheckoutView: React.FC = () => {
                 razorpay_order_id: result.razorpay_order_id,
                 razorpay_payment_id: result.razorpay_payment_id,
                 razorpay_signature: result.razorpay_signature,
+                guestAccessToken: order.guestAccessToken,
               }),
             });
-            const verified = await verificationResponse.json();
-            if (!verificationResponse.ok || verified?.success !== true || !verified?.testMode) {
-              throw new Error(verified?.error || 'Could not verify Razorpay test payment.');
+            const verified = await verificationResponse.json().catch(() => ({}));
+            if (!verificationResponse.ok || verified?.success !== true ||
+                verified?.paymentStatus !== 'paid' || verified?.orderNumber !== order.orderNumber) {
+              throw new Error(verified?.error || 'Could not confirm payment in the order database');
             }
-            setPaymentFeedback('Razorpay TEST payment verified. Your cart is unchanged. No order has been recorded or dispatched.');
-            showToast('Test payment verified', 'No real order was created.', 'success');
+            setConfirmedOrder({ number: verified.orderNumber, total: order.amount / 100 });
+            setPaymentFeedback('Payment captured, verified and recorded as order ' + verified.orderNumber);
+            checkoutKeyRef.current = null;
+            clearCart();
+            setOrderState('Paid');
+            showToast('Payment confirmed', 'Order ' + verified.orderNumber + ' has been recorded.', 'success');
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Payment verification failed';
-            setPaymentFeedback('Verification incomplete: ' + message + '. Check the payment in Razorpay Test Dashboard.');
-            showToast('Verification incomplete', message, 'error');
-          } finally {
+            const message = error instanceof Error ? error.message : 'Verification incomplete';
             setOrderState('Pending');
+            setPaymentFeedback('Your payment may have been captured. Do NOT retry until support checks Razorpay and your order. ' + message);
+            showToast('Payment needs verification', 'Do not pay again. Contact support with your Razorpay payment ID.', 'error');
           }
         },
       });
       checkout.on('payment.failed', () => {
         setOrderState('Pending');
-        showToast('Test payment failed', 'You can retry checkout.', 'error');
+        showToast('Payment failed', 'No payment was confirmed. You can try again.', 'error');
       });
       setOrderState('Pending');
       checkout.open();
     } catch (error) {
       setOrderState('Pending');
-      showToast('Payment unavailable', error instanceof Error ? error.message : 'Unable to start checkout', 'error');
+      showToast('Checkout unavailable', error instanceof Error ? error.message : 'Please try again later', 'error');
     }
   };
+
+  if (orderState === 'Paid' && confirmedOrder) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0D] text-[#F5F5F7] py-24 text-center">
+        <div className="max-w-lg mx-auto px-6 border border-[#8B5CF6] bg-[#15151B] p-8 space-y-4">
+          <CheckCircle2 size={44} className="mx-auto text-[#00D9FF]" />
+          <h1 className="font-display text-2xl font-bold uppercase">Payment Verified</h1>
+          <p className="text-sm text-[#C7CBD3]">Your payment was captured and your NYXDRIP order was recorded securely.</p>
+          <p className="font-mono-numbers text-xl font-bold">{confirmedOrder.number}</p>
+          <p className="text-sm">Paid: ₹{confirmedOrder.total.toLocaleString('en-IN')}</p>
+          <p className="text-xs text-[#9A9AA3]">Save this order number for support and shipping enquiries.</p>
+          <button onClick={() => navigateTo('shop')} className="px-6 py-3 bg-[#8B5CF6] text-white text-xs font-bold uppercase">Continue Shopping</button>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0 && orderState === 'Pending') {
     return (
@@ -546,13 +573,12 @@ export const CheckoutView: React.FC = () => {
               </div>
 
               <div className="border border-[#8B5CF6]/30 bg-[#0A0A0D] p-4 space-y-3 text-xs text-[#C7CBD3]">
-            <p className="font-bold text-white uppercase tracking-wider">Razorpay Hosted Checkout</p>
-            <p>UPI, cards and other supported methods appear securely inside the Razorpay modal. This website does not collect card numbers or CVVs.</p>
-            <p className="text-[#00D9FF] font-bold">TEST MODE ONLY — no real fulfilment order will be created.</p>
-            {!testCheckoutEnabled && <p className="text-amber-300">Checkout disabled until the test environment and secure order handling are configured.</p>}
-            {appliedCoupon && <p className="text-amber-300">Remove coupon before testing payment. Test amounts are calculated from live catalog prices, without discounts.</p>}
-              {paymentFeedback && <p role="status" className="text-[#00D9FF]">{paymentFeedback}</p>}
-            </div>
+                <p className="font-bold text-white uppercase tracking-wider">Secure Razorpay Checkout</p>
+                <p>UPI, cards, and supported methods open inside the official Razorpay checkout. Card details are never entered on this website.</p>
+                {!liveCheckoutEnabled && <p className="text-amber-300">Checkout is not activated. Payments cannot be placed yet.</p>}
+                <p className="text-[#9A9AA3]">The final amount is calculated by our server from current product prices, shipping and valid coupons.</p>
+                {paymentFeedback && <p role="status" className="text-amber-200">{paymentFeedback}</p>}
+              </div>
             </div>
           </div>
 
@@ -620,10 +646,10 @@ export const CheckoutView: React.FC = () => {
                 <Magnetic strength={10} className="w-full">
                   <button
                     type="submit"
-                    disabled={orderState === 'Processing' || !testCheckoutEnabled || Boolean(appliedCoupon)}
+                    disabled={orderState === 'Processing' || !liveCheckoutEnabled}
                     className="w-full py-4 bg-[#8B5CF6] hover:bg-[#7c4def] disabled:opacity-50 text-white text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 shadow-2xl transition-all active:scale-95"
                   >
-                    <span>{testCheckoutEnabled ? 'Open Razorpay Test Checkout' : 'Online Checkout Coming Soon'}</span>
+                    <span>{liveCheckoutEnabled ? 'Pay Securely with Razorpay' : 'Online Checkout Coming Soon'}</span>
                   </button>
                 </Magnetic>
 
@@ -648,10 +674,10 @@ export const CheckoutView: React.FC = () => {
 
               <div className="space-y-1 text-center">
                 <p className="text-[11px] text-[#9A9AA3]">
-                  Razorpay hosted secure checkout · Test mode
+                  Razorpay hosted checkout · Server-verified payments
                 </p>
                 <p className="text-[10px] text-[#9A9AA3]/60">
-                  Testing Razorpay does not create a dispatchable order.
+                  The final payable amount is confirmed by the server before payment.
                 </p>
               </div>
             </div>
