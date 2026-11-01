@@ -18,6 +18,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
   // All product images
   const images = React.useMemo(() => getProductImages(product), [product]);
   const hasMultipleImages = images.length > 1;
+  const fitEntireProduct = product.slug === 'y2k-glass' || product.slug === 'chrome-silver-rimless-glass';
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -134,8 +135,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = PRODUCT_PLACEHOLDER_IMAGE;
                   }}
-                  className={`w-full h-full object-cover object-center transition-all duration-700 ease-out ${
-                    isHovered ? 'scale-108' : 'scale-100'
+                  className={`w-full h-full ${fitEntireProduct ? 'object-contain p-2 sm:p-3' : 'object-cover object-center'} transition-all duration-700 ease-out ${
+                    !fitEntireProduct && isHovered ? 'scale-108' : 'scale-100'
                   }`}
                 />
               </div>
