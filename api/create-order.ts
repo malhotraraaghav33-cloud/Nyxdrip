@@ -28,7 +28,7 @@ export default async function handler(req: Request, res: Response) {
       typeof address.state !== 'string' || address.state.length < 2 || address.state.length > 100 ||
       !/^\d{6}$/.test(String(address.pincode || '')) ||
       address.country !== 'India' ||
-      !['standard', 'express'].includes(deliveryMethod) ||
+      deliveryMethod !== 'standard' ||
       !Array.isArray(lines) || lines.length < 1 || lines.length > 20) {
     return json(res, 400, { error: 'Enter complete, valid shipping details' });
   }
