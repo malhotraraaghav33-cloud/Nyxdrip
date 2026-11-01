@@ -38,7 +38,7 @@ export const ContactView: React.FC = () => {
     },
     {
       q: 'What is your return & exchange policy?',
-      a: 'Return and exchange requests are reviewed on a case-by-case basis by store management. For questions regarding fit, sizing, or pieces, please contact our team directly via WhatsApp at +91 93541 29232 or email support@nyxdripstore.com. (Return policy is subject to owner review).',
+      a: 'Return and exchange requests are reviewed on a case-by-case basis by store management. For questions regarding fit, sizing, or pieces, please contact our team directly via WhatsApp at +91 93541 29232 or email nyxdripstore@gmail.com. (Return policy is subject to owner review).',
     },
   ];
 
@@ -174,7 +174,7 @@ export const ContactView: React.FC = () => {
                     <Mail size={16} className="text-[#8B5CF6] shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-[#F5F5F7]">Direct Email</p>
-                      <p className="text-[#9A9AA3]">support@nyxdripstore.com</p>
+                      <a href="mailto:nyxdripstore@gmail.com" className="text-[#9A9AA3] hover:text-[#00D9FF] transition-colors break-all">nyxdripstore@gmail.com</a>
                     </div>
                   </div>
 
@@ -216,7 +216,7 @@ export const ContactView: React.FC = () => {
                     <MapPin size={16} className="text-[#9A9AA3] shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-[#F5F5F7]">Vault Dispatch Center</p>
-                      <p className="text-[#9A9AA3]">Bandra West, Mumbai, Maharashtra 400050, India</p>
+                      <p className="text-[#9A9AA3]">Uttam Nagar, West Delhi, Delhi 110059, India</p>
                     </div>
                   </div>
                 </div>
