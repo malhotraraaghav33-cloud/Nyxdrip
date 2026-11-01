@@ -34,7 +34,7 @@ export const CATEGORIES_DATA = [
   {
     name: 'Pendants',
     slug: 'pendants',
-    image: '/nyxdrip2.0/Ch pendent/file_000000008d208210a4fb4b6cb8b9613b.png',
+    image: '/assets/client-refresh/ch-pendant.webp',
     description: 'Sculpted gothic crosses, dark relics, and cyber emblems.',
     count: 4,
   },
@@ -83,8 +83,8 @@ export const SLUG_ALIASES: Record<string, string> = {
   'ch-bracelet-1-0': 'ch-bracelet',
   'y2k-devil-cap': 'y2k-cap',
   'bersek-pendant': 'berserk-pendant',
-  'angel-creed-necklace': 'angled-creed-necklace',
-  'angle-creed-necklace': 'angled-creed-necklace',
+  'angled-creed-necklace': 'angel-creed-necklace',
+  'angle-creed-necklace': 'angel-creed-necklace',
 };
 
 export const PRODUCTS: Product[] = [
@@ -97,10 +97,8 @@ export const PRODUCTS: Product[] = [
     category: 'Necklaces',
     description: 'Triple Cross CH Necklace from the NYx DRIPstore collection. Heavy industrial cross layered chains in blackened chrome finish.',
     images: [
-      '/nyxdrip/triple cross/IMG-20261002-WA0000.jpg',
-      '/nyxdrip/triple cross/IMG-20261002-WA0002.jpg',
-      '/nyxdrip/triple cross/IMG-20261002-WA0014.jpg',
-    ],
+      '/assets/client-refresh/triple-cross-ch-necklace.webp',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -115,9 +113,8 @@ export const PRODUCTS: Product[] = [
     style: 'Y2K',
     description: 'Y2K Glass from the NYx DRIPstore collection. Futuristic cyber aesthetic eyewear accessory.',
     images: [
-      '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.37.28_PM_ec535360.jpeg',
-      '/nyxdrip/Y2k Glass/y2k-glass.jpg',
-    ],
+      '/assets/client-refresh/y2k-glass.webp',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -141,17 +138,15 @@ export const PRODUCTS: Product[] = [
 
   // 4. Angled Creed Necklace — ₹399
   {
-    id: 'prod-angled-creed-necklace',
-    slug: 'angled-creed-necklace',
-    name: 'Angled Creed Necklace',
+    id: 'prod-angel-creed-necklace',
+    slug: 'angel-creed-necklace',
+    name: 'Angel Creed Necklace',
     price: 399,
     category: 'Necklaces',
-    description: 'Angled Creed Necklace from the NYx DRIPstore collection. Sculpted gothic wing and cross insignia.',
+    description: 'Angel Creed Necklace from the NYx DRIPstore collection. Sculpted gothic wing and cross insignia.',
     images: [
-      '/nyxdrip/Angle creed necklace/IMG-20261002-WA0008.jpg',
-      '/nyxdrip/Angle creed necklace/IMG-20261002-WA0013.jpg',
-      '/nyxdrip/Angle creed necklace/IMG-20261002-WA0034.jpg',
-    ],
+      '/assets/client-refresh/angel-creed-necklace.webp',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -182,10 +177,8 @@ export const PRODUCTS: Product[] = [
     category: 'Studs / Earrings',
     description: 'Royal Fleur Studs from the NYx DRIPstore collection. Price is for 1 PC (Single Piece). Intricate sculpted silver fleur hardware.',
     images: [
-      '/nyxdrip/Royal Fleur Struds/IMG-20261002-WA0011.jpg',
-      '/nyxdrip/Royal Fleur Struds/IMG-20261002-WA0035.jpg',
-      '/nyxdrip/Royal Fleur Struds/IMG-20261002-WA0038.jpg',
-    ],
+      '/assets/products/placeholder.svg',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -200,8 +193,8 @@ export const PRODUCTS: Product[] = [
     style: 'Y2K',
     description: 'Y2K Cap from the NYx DRIPstore collection. Dark streetwear headwear featuring signature sculptural horns.',
     images: [
-      '/nyxdrip/Y2k Devil Cap/IMG-20261002-WA0039.jpg',
-    ],
+      '/assets/client-refresh/y2k-cap.webp',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -215,9 +208,8 @@ export const PRODUCTS: Product[] = [
     category: 'Pendants',
     description: 'CH Pendant from the NYx DRIPstore collection. Sculpted gothic cross centerpiece.',
     images: [
-      '/nyxdrip2.0/Bersek pendent/file_00000000669c82108310d8a5f6ca67a5.png',
-      '/nyxdripscreenshot/bersek pendent/Screenshot_20261002-124228.jpg',
-    ],
+      '/assets/client-refresh/ch-pendant.webp',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -247,9 +239,8 @@ export const PRODUCTS: Product[] = [
     category: 'Pendants',
     description: 'Double Cross Pendant from the NYx DRIPstore collection. Interlocking double cross motif.',
     images: [
-      '/nyxdrip2.0/Ch pendent/file_000000008d208210a4fb4b6cb8b9613b.png',
-      '/nyxdripscreenshot/Ch pendent/Screenshot_20261002-124257.jpg',
-    ],
+      '/nyxdrip2.0/Double cross pendent/file_00000000f2a082108e6a99793e3bbfff.png',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -263,9 +254,8 @@ export const PRODUCTS: Product[] = [
     category: 'Pendants',
     description: 'Berserk Pendant from the NYx DRIPstore collection. Dark fantasy emblem hardware.',
     images: [
-      '/nyxdrip2.0/Double cross pendent/file_00000000f2a082108e6a99793e3bbfff.png',
-      '/nyxdripscreenshot/Double cross pendent/IMG_20261002_125433_250.jpg',
-    ],
+      '/assets/client-refresh/berserk-pendant.webp',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -280,10 +270,9 @@ export const PRODUCTS: Product[] = [
     color: 'Blue',
     description: 'Blue Metallic Wallet from the NYx DRIPstore collection. Deep cobalt metallic sheen cyber finish.',
     images: [
-      '/nyxdrip/Blue Mettalic wallet/IMG-20261002-WA0029.jpg',
-      '/nyxdrip/Blue Mettalic wallet/IMG-20261002-WA0030.jpg',
-      '/nyxdrip/Blue Mettalic wallet/IMG-20261002-WA0033.jpg',
-    ],
+      '/assets/client-refresh/blue-metallic-wallet-front.webp',
+      '/assets/client-refresh/blue-metallic-wallet-inside.webp',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -299,8 +288,8 @@ export const PRODUCTS: Product[] = [
     description: 'Red Cosmic Star Necklace from the NYx DRIPstore collection. Celestial star motif with blood red core.',
     images: [
       '/nyxdrip/Red Cosmic Star Necklace/IMG-20261002-WA0031.jpg',
-      '/nyxdrip/Red Cosmic Star Necklace/IMG-20261002-WA0032.jpg',
-    ],
+      '/assets/client-refresh/red-cosmic-star-necklace.webp',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -331,8 +320,8 @@ export const PRODUCTS: Product[] = [
     category: 'Necklaces',
     description: 'Snake Cross Necklace from the NYx DRIPstore collection. Serpentine chrome cross entwined chain.',
     images: [
-      '/nyxdrip2.0/Snake cross nekclace/IMG_20261002_125440_660.jpg',
-    ],
+      '/assets/client-refresh/snake-cross-necklace.webp',
+    ]
     stock: 10,
     isNewArrival: true,
   },
@@ -364,9 +353,8 @@ export const PRODUCTS: Product[] = [
     style: 'Y2K',
     description: 'Chrome Silver Rimless Glass from the NYx DRIPstore collection. Sleek rimless cyber shades with sculptural metallic temples.',
     images: [
-      '/assets/aistudio/WhatsApp_Image_2026-10-30_at_5.25.27_PM_fd4c30d4.jpeg',
       '/assets/aistudio/Screenshot_2026-10-30_180247_6b8d3fa6.png',
-    ],
+    ]
     stock: 10,
     isNewArrival: true,
   },
