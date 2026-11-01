@@ -1,43 +1,49 @@
 import React, { useEffect, useState } from 'react';
 import { Truck, Timer } from 'lucide-react';
 import { useNavigation } from '../../context/NavigationContext';
-import { formatLaunchOfferCountdown, getLaunchOfferRemainingMs } from '../../utils/launchOffer';
+import { getLaunchOfferRemainingMs } from '../../lib/launchOffer';
+
+const formatCountdown = (remaining: number) => {
+  const seconds = Math.ceil(remaining / 1000);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${String(days).padStart(2, '0')}d : ${String(hours).padStart(2, '0')}h : ${String(minutes).padStart(2, '0')}m : ${String(secs).padStart(2, '0')}s`;
+};
 
 export const AnnouncementBar: React.FC = () => {
   const { navigateTo } = useNavigation();
-  const [remainingMs, setRemainingMs] = useState(getLaunchOfferRemainingMs);
+  const [remaining, setRemaining] = useState(getLaunchOfferRemainingMs);
 
   useEffect(() => {
-    const update = () => setRemainingMs(getLaunchOfferRemainingMs());
-    const interval = window.setInterval(update, 1000);
+    const update = () => setRemaining(getLaunchOfferRemainingMs());
+    const timer = window.setInterval(update, 1000);
     window.addEventListener('focus', update);
     document.addEventListener('visibilitychange', update);
     return () => {
-      window.clearInterval(interval);
+      window.clearInterval(timer);
       window.removeEventListener('focus', update);
       document.removeEventListener('visibilitychange', update);
     };
   }, []);
 
-  if (remainingMs > 0) {
+  if (remaining > 0) {
     return (
-      <div className="relative bg-[#120D1D] border-b border-[#8B5CF6]/50 text-[#F5F5F7] px-3 py-2 sm:py-2.5">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
-          <Truck size={16} className="text-[#00D9FF] shrink-0" aria-hidden="true" />
-          <span className="text-[10px] sm:text-xs font-bold tracking-[0.08em] sm:tracking-[0.13em] uppercase">
-            Launch Special <span className="text-[#00D9FF]">Free Standard Delivery</span>
+      <div className="border-b border-[#8B5CF6]/40 bg-[#170F2C] text-white px-3 py-2 sm:py-2.5">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+          <Truck size={15} className="text-[#00D9FF] shrink-0" aria-hidden="true" />
+          <span className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.12em]">
+            LAUNCH OFFER · FREE STANDARD DELIVERY ON ALL ORDERS
           </span>
-          <span className="hidden sm:block h-4 w-px bg-[#8B5CF6]/60" aria-hidden="true" />
-          <div className="flex items-center gap-2">
-            <Timer size={14} className="text-[#8B5CF6]" aria-hidden="true" />
-            <span className="text-[10px] sm:text-xs text-[#C7CBD3] font-semibold">Ends Tue, 3 Nov · 2 AM IST</span>
-            <span className="font-mono-numbers tabular-nums text-[11px] sm:text-sm font-black text-white tracking-wider rounded-sm border border-[#8B5CF6]/50 bg-[#8B5CF6]/20 px-2 py-0.5" role="timer" aria-label="Time left for free standard delivery">
-              {formatLaunchOfferCountdown(remainingMs)}
-            </span>
-          </div>
-          <button type="button" onClick={() => navigateTo('shop')} className="text-[10px] sm:text-xs font-bold uppercase underline underline-offset-4 decoration-[#8B5CF6] hover:text-[#00D9FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D9FF]">
-            Shop Now
-          </button>
+          <span className="hidden sm:block w-px h-4 bg-[#8B5CF6]/70" />
+          <span className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-mono-numbers text-[#00D9FF]" role="timer" aria-label={`Launch free delivery ends in ${formatCountdown(remaining)}`}>
+            <Timer size={13} aria-hidden="true" />
+            <span className="tabular-nums tracking-wider">{formatCountdown(remaining)}</span>
+          </span>
+          <span className="w-full text-[9px] sm:text-[10px] tracking-wide text-[#C7CBD3]">
+            Ends Tuesday, 3 Nov at 2:00 AM IST · Express upgrade ₹150 extra
+          </span>
         </div>
       </div>
     );
@@ -48,7 +54,6 @@ export const AnnouncementBar: React.FC = () => {
       <span>FREE STANDARD SHIPPING ON ORDERS ABOVE ₹999</span>
       <span className="w-1 h-1 rounded-full bg-[#8B5CF6]" />
       <button
-        type="button"
         onClick={() => navigateTo('shop', { newArrivalsOnly: true } as unknown as object)}
         className="text-[#F5F5F7] underline underline-offset-2 hover:text-[#00D9FF] transition-colors"
       >
