@@ -98,6 +98,7 @@ export const PRODUCTS: Product[] = [
     description: 'Triple Cross CH Necklace from the NYx DRIPstore collection. Heavy industrial cross layered chains in blackened chrome finish.',
     images: [
       '/assets/client-refresh/triple-cross-ch-necklace.webp',
+      '/nyxdrip/triple cross/IMG-20261002-WA0000.jpg',
     ],
     stock: 10,
     isNewArrival: true,
@@ -146,6 +147,7 @@ export const PRODUCTS: Product[] = [
     description: 'Angel Creed Necklace from the NYx DRIPstore collection. Sculpted gothic wing and cross insignia.',
     images: [
       '/assets/client-refresh/angel-creed-necklace.webp',
+      '/nyxdrip/Angle creed necklace/IMG-20261002-WA0008.jpg',
     ],
     stock: 10,
     isNewArrival: true,
@@ -177,7 +179,8 @@ export const PRODUCTS: Product[] = [
     category: 'Studs / Earrings',
     description: 'Royal Fleur Studs from the NYx DRIPstore collection. Price is for 1 PC (Single Piece). Intricate sculpted silver fleur hardware.',
     images: [
-      '/assets/products/placeholder.svg',
+      '/nyxdrip/Royal Fleur Struds/IMG-20261002-WA0038.jpg',
+      '/nyxdrip/Royal Fleur Struds/IMG-20261002-WA0011.jpg',
     ],
     stock: 10,
     isNewArrival: true,
