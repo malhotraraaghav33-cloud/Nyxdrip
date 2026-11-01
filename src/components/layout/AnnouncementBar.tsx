@@ -42,7 +42,7 @@ export const AnnouncementBar: React.FC = () => {
             <span className="tabular-nums tracking-wider">{formatCountdown(remaining)}</span>
           </span>
           <span className="w-full text-[9px] sm:text-[10px] tracking-wide text-[#C7CBD3]">
-            Ends Tuesday, 3 Nov at 2:00 AM IST · Express upgrade ₹150 extra
+            Ends Tuesday, 3 Nov at 2:00 AM IST · No minimum order
           </span>
         </div>
       </div>
