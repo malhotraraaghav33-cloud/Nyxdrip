@@ -70,7 +70,6 @@ export const CheckoutView: React.FC = () => {
     }
   }, [user, profile]);
 
-  const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'express'>('standard');
   const [orderState, setOrderState] = useState<OrderStatus>('Pending');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentFeedback, setPaymentFeedback] = useState('');
@@ -79,7 +78,7 @@ export const CheckoutView: React.FC = () => {
   const [confirmedOrder, setConfirmedOrder] = useState<{ number: string; total: number } | null>(null);
 
   // Delivery fee adjustments
-  const finalShipping = deliveryMethod === 'express' ? shipping + 150 : shipping;
+  const finalShipping = shipping;
   const finalTotal = Math.max(0, subtotal - discount + finalShipping);
 
   // Form validation
@@ -155,7 +154,7 @@ export const CheckoutView: React.FC = () => {
             selectedVariant: item.selectedVariant || 'Standard',
           })),
           shippingAddress: formData,
-          deliveryMethod,
+          deliveryMethod: 'standard',
           couponCode: appliedCoupon?.code || null,
           idempotencyKey: checkoutKeyRef.current,
         }),
