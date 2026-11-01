@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { INDIA_STATES, INDIA_UNION_TERRITORIES } from '../../data/indiaRegions';
 import { X, User, Mail, Lock, Phone, LogOut, Package, MapPin, Shield, CheckCircle2, AlertCircle, Loader2, ArrowRight, Heart, KeyRound, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '../../context/NavigationContext';
@@ -843,14 +844,21 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
                           onChange={(e) => setNewAddr({ ...newAddr, city: e.target.value })}
                           className="w-full bg-[#15151B] border border-[#2A2A32] px-3 py-2 text-xs text-white"
                         />
-                        <input
-                          type="text"
-                          required
-                          placeholder="State *"
-                          value={newAddr.state}
-                          onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })}
-                          className="w-full bg-[#15151B] border border-[#2A2A32] px-3 py-2 text-xs text-white"
-                        />
+                        <select
+                           required
+                           value={newAddr.state}
+                           onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })}
+                           className="w-full bg-[#15151B] border border-[#2A2A32] px-3 py-2 text-xs text-white"
+                           aria-label="State or Union Territory"
+                         >
+                           <option value="" disabled>Select State / UT</option>
+                           <optgroup label="States (28)">
+                             {INDIA_STATES.map((region) => <option key={region} value={region}>{region}</option>)}
+                           </optgroup>
+                           <optgroup label="Union Territories (8)">
+                             {INDIA_UNION_TERRITORIES.map((region) => <option key={region} value={region}>{region}</option>)}
+                           </optgroup>
+                         </select>
                         <input
                           type="text"
                           required
