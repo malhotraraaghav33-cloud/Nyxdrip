@@ -16,6 +16,7 @@ export const NewDropSection: React.FC = () => {
   const heroDrop = products.find((p) => p.slug === 'triple-cross-ch-necklace') || products[0];
   const sideDrops = products
     .filter((p) => p.slug !== heroDrop?.slug && !['ring', 'rings'].includes(p.category.toLowerCase()))
+    .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0))
     .slice(0, 2);
 
   if (!heroDrop) return null;
