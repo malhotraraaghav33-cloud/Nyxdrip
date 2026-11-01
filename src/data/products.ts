@@ -98,7 +98,7 @@ export const PRODUCTS: Product[] = [
     description: 'Triple Cross CH Necklace from the NYx DRIPstore collection. Heavy industrial cross layered chains in blackened chrome finish.',
     images: [
       '/assets/client-refresh/triple-cross-ch-necklace.webp',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -114,7 +114,7 @@ export const PRODUCTS: Product[] = [
     description: 'Y2K Glass from the NYx DRIPstore collection. Futuristic cyber aesthetic eyewear accessory.',
     images: [
       '/assets/client-refresh/y2k-glass.webp',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -146,7 +146,7 @@ export const PRODUCTS: Product[] = [
     description: 'Angel Creed Necklace from the NYx DRIPstore collection. Sculpted gothic wing and cross insignia.',
     images: [
       '/assets/client-refresh/angel-creed-necklace.webp',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -178,7 +178,7 @@ export const PRODUCTS: Product[] = [
     description: 'Royal Fleur Studs from the NYx DRIPstore collection. Price is for 1 PC (Single Piece). Intricate sculpted silver fleur hardware.',
     images: [
       '/assets/products/placeholder.svg',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -194,7 +194,7 @@ export const PRODUCTS: Product[] = [
     description: 'Y2K Cap from the NYx DRIPstore collection. Dark streetwear headwear featuring signature sculptural horns.',
     images: [
       '/assets/client-refresh/y2k-cap.webp',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -209,7 +209,7 @@ export const PRODUCTS: Product[] = [
     description: 'CH Pendant from the NYx DRIPstore collection. Sculpted gothic cross centerpiece.',
     images: [
       '/assets/client-refresh/ch-pendant.webp',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -240,7 +240,7 @@ export const PRODUCTS: Product[] = [
     description: 'Double Cross Pendant from the NYx DRIPstore collection. Interlocking double cross motif.',
     images: [
       '/nyxdrip2.0/Double cross pendent/file_00000000f2a082108e6a99793e3bbfff.png',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -255,7 +255,7 @@ export const PRODUCTS: Product[] = [
     description: 'Berserk Pendant from the NYx DRIPstore collection. Dark fantasy emblem hardware.',
     images: [
       '/assets/client-refresh/berserk-pendant.webp',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -272,7 +272,7 @@ export const PRODUCTS: Product[] = [
     images: [
       '/assets/client-refresh/blue-metallic-wallet-front.webp',
       '/assets/client-refresh/blue-metallic-wallet-inside.webp',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -289,7 +289,7 @@ export const PRODUCTS: Product[] = [
     images: [
       '/nyxdrip/Red Cosmic Star Necklace/IMG-20261002-WA0031.jpg',
       '/assets/client-refresh/red-cosmic-star-necklace.webp',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -321,7 +321,7 @@ export const PRODUCTS: Product[] = [
     description: 'Snake Cross Necklace from the NYx DRIPstore collection. Serpentine chrome cross entwined chain.',
     images: [
       '/assets/client-refresh/snake-cross-necklace.webp',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
@@ -354,7 +354,7 @@ export const PRODUCTS: Product[] = [
     description: 'Chrome Silver Rimless Glass from the NYx DRIPstore collection. Sleek rimless cyber shades with sculptural metallic temples.',
     images: [
       '/assets/aistudio/Screenshot_2026-10-30_180247_6b8d3fa6.png',
-    ]
+    ],
     stock: 10,
     isNewArrival: true,
   },
