@@ -10,9 +10,10 @@ export const FeaturedSection: React.FC = () => {
   const { products } = useProducts();
   const [activeTab, setActiveTab] = useState<'all' | 'bestsellers' | 'new'>('all');
 
-  const storefrontProducts = products.filter(
-    (p) => !['ring', 'rings'].includes(p.category.toLowerCase())
-  );
+  const storefrontProducts = products
+    .filter((p) => !['ring', 'rings'].includes(p.category.toLowerCase()))
+    // Show sellable inventory first before limiting the featured grid to 8 items.
+    .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0));
 
   const filteredProducts = storefrontProducts.filter((p) => {
     if (activeTab === 'bestsellers') return p.isBestSeller;
