@@ -4,6 +4,7 @@ import { useToast } from './ToastContext';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import { useProducts } from './ProductContext';
 import { validateCouponCode } from '../services/couponService';
+import { isLaunchFreeShippingActive, LAUNCH_OFFER_END_UTC_MS } from '../utils/launchOffer';
 import {
   getProductByKey,
   loadGuestCartFromStorage,
@@ -58,6 +59,21 @@ const STANDARD_SHIPPING_FEE = 99;
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { showToast } = useToast();
   const { products } = useProducts();
+  const [launchOfferActive, setLaunchOfferActive] = useState(isLaunchFreeShippingActive);
+  useEffect(() => {
+    const syncOffer = () => setLaunchOfferActive(isLaunchFreeShippingActive());
+    // A single deadline timeout updates the cart precisely at expiry.
+    const delay = Math.max(0, LAUNCH_OFFER_END_UTC_MS - Date.now());
+    const timer = window.setTimeout(syncOffer, Math.min(delay + 20, 2147483647));
+    window.addEventListener('focus', syncOffer);
+    document.addEventListener('visibilitychange', syncOffer);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('focus', syncOffer);
+      document.removeEventListener('visibilitychange', syncOffer);
+    };
+  }, []);
+
 
   // Active authenticated user ID
   const [userId, setUserId] = useState<string | null>(null);
@@ -163,8 +179,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const shipping = useMemo(() => {
     if (items.length === 0 || subtotal === 0) return 0;
-    return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
-  }, [items.length, subtotal]);
+    return launchOfferActive || subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
+  }, [items.length, subtotal, launchOfferActive]);
 
   const total = useMemo(() => {
     if (items.length === 0 || subtotal === 0) return 0;
@@ -172,9 +188,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items.length, subtotal, discount, shipping]);
 
   const amountNeededForFreeShipping = useMemo(() => {
+    if (launchOfferActive) return 0;
     if (items.length === 0 || subtotal === 0) return FREE_SHIPPING_THRESHOLD;
     return Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
-  }, [items.length, subtotal]);
+  }, [items.length, subtotal, launchOfferActive]);
 
   // ============================================================================
   // GUEST CROSS-TAB STORAGE SYNCHRONIZATION
