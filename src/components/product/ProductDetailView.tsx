@@ -177,6 +177,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
               badge={product.badge}
               selectedIndex={selectedImageIndex}
               onSelectIndex={setSelectedImageIndex}
+              fitEntireProduct={product.slug === 'y2k-glass' || product.slug === 'chrome-silver-rimless-glass'}
             />
           </div>
 
