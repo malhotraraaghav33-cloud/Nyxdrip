@@ -24,6 +24,12 @@ export const Footer: React.FC = () => {
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00D9FF]" />
               <span>Free Pan-India Delivery on orders over ₹999</span>
             </div>
+            <div className="pt-1 space-y-2 text-xs">
+              <a href="mailto:nyxdripstore@gmail.com" className="block w-fit text-[#C7CBD3] hover:text-[#00D9FF] transition-colors break-all">
+                nyxdripstore@gmail.com
+              </a>
+              <p className="text-[#9A9AA3]">Dispatch: Uttam Nagar, West Delhi, Delhi 110059, India</p>
+            </div>
           </div>
 
           {/* Shop Column */}
