@@ -99,6 +99,7 @@ export const PRODUCTS: Product[] = [
     images: [
       '/assets/client-refresh/triple-cross-ch-necklace.webp',
       '/nyxdrip/triple cross/IMG-20261002-WA0000.jpg',
+      '/assets/client-refresh/triple-cross-ch-necklace-secondary.webp',
     ],
     stock: 10,
     isNewArrival: true,
@@ -148,6 +149,7 @@ export const PRODUCTS: Product[] = [
     images: [
       '/assets/client-refresh/angel-creed-necklace.webp',
       '/nyxdrip/Angle creed necklace/IMG-20261002-WA0008.jpg',
+      '/assets/client-refresh/angel-creed-necklace-secondary.webp',
     ],
     stock: 10,
     isNewArrival: true,
@@ -179,8 +181,8 @@ export const PRODUCTS: Product[] = [
     category: 'Studs / Earrings',
     description: 'Royal Fleur Studs from the NYx DRIPstore collection. Price is for 1 PC (Single Piece). Intricate sculpted silver fleur hardware.',
     images: [
-      '/nyxdrip/Royal Fleur Struds/IMG-20261002-WA0038.jpg',
-      '/nyxdrip/Royal Fleur Struds/IMG-20261002-WA0011.jpg',
+      '/assets/client-refresh/royal-fleur-studs-product.webp',
+      '/assets/client-refresh/royal-fleur-studs-worn.webp',
     ],
     stock: 10,
     isNewArrival: true,
