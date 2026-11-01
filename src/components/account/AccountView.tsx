@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { INDIA_STATES, INDIA_UNION_TERRITORIES } from '../../data/indiaRegions';
 import { User, Mail, Lock, Phone, LogOut, Package, MapPin, Shield, CheckCircle2, AlertCircle, Loader2, ArrowRight, Heart, KeyRound, ShoppingBag, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '../../context/NavigationContext';
@@ -1150,14 +1151,20 @@ export const AccountView: React.FC = () => {
                         </div>
                         <div>
                           <label className="block text-[11px] font-semibold uppercase text-[#9A9AA3] mb-1">State *</label>
-                          <input
-                            type="text"
-                            required
-                            placeholder="State"
-                            value={newAddr.state}
-                            onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })}
-                            className="w-full bg-[#15151B] border border-[#2A2A32] px-3.5 py-2 text-xs text-white"
-                          />
+                          <select
+                             required
+                             value={newAddr.state}
+                             onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })}
+                             className="w-full bg-[#15151B] border border-[#2A2A32] px-3.5 py-2 text-xs text-white"
+                           >
+                             <option value="" disabled>Select State / UT</option>
+                             <optgroup label="States (28)">
+                               {INDIA_STATES.map((region) => <option key={region} value={region}>{region}</option>)}
+                             </optgroup>
+                             <optgroup label="Union Territories (8)">
+                               {INDIA_UNION_TERRITORIES.map((region) => <option key={region} value={region}>{region}</option>)}
+                             </optgroup>
+                           </select>
                         </div>
                         <div>
                           <label className="block text-[11px] font-semibold uppercase text-[#9A9AA3] mb-1">Pincode *</label>
