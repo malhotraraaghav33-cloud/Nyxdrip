@@ -128,18 +128,22 @@ export const ShopView: React.FC = () => {
   // Sort products
   const sortedProducts = useMemo(() => {
     const list = [...filteredProducts];
+    // Stable stock priority: sold-out items always come after available items,
+    // while preserving the customer's selected sorting within each group.
+    const inStockFirst = (items: typeof list) =>
+      items.sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0));
     switch (sortBy) {
       case 'newest':
-        return list.filter((p) => p.isNewArrival).concat(list.filter((p) => !p.isNewArrival));
+        return inStockFirst(list.filter((p) => p.isNewArrival).concat(list.filter((p) => !p.isNewArrival)));
       case 'price-asc':
-        return list.sort((a, b) => a.price - b.price);
+        return inStockFirst(list.sort((a, b) => a.price - b.price));
       case 'price-desc':
-        return list.sort((a, b) => b.price - a.price);
+        return inStockFirst(list.sort((a, b) => b.price - a.price));
       case 'popular':
-        return list.sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0));
+        return inStockFirst(list.sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0)));
       case 'featured':
       default:
-        return list.sort((a, b) => (b.badge ? 1 : 0) - (a.badge ? 1 : 0));
+        return inStockFirst(list.sort((a, b) => (b.badge ? 1 : 0) - (a.badge ? 1 : 0)));
     }
   }, [filteredProducts, sortBy]);
 
