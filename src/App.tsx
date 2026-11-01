@@ -15,6 +15,7 @@ import { BrandLoader } from './components/common/BrandLoader';
 import { RouteTransition } from './components/common/RouteTransition';
 
 import { Hero } from './components/home/Hero';
+import { LaunchCountdown } from './components/home/LaunchCountdown';
 import { CategorySection } from './components/home/CategorySection';
 import { FeaturedSection } from './components/home/FeaturedSection';
 import { BrandStatement } from './components/home/BrandStatement';
@@ -55,6 +56,7 @@ const AppContent: React.FC = () => {
           {currentView === 'home' && (
             <>
               <Hero />
+              <LaunchCountdown />
               <BrandStatement />
               <FeaturedSection />
               <CategorySection />
