@@ -239,7 +239,7 @@ export const PRODUCTS: Product[] = [
     category: 'Pendants',
     description: 'Double Cross Pendant from the NYx DRIPstore collection. Interlocking double cross motif.',
     images: [
-      '/nyxdrip2.0/Double cross pendent/file_00000000f2a082108e6a99793e3bbfff.png',
+      '/assets/client-refresh/double-cross-pendant-new.webp',
     ],
     stock: 10,
     isNewArrival: true,
