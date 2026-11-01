@@ -270,7 +270,7 @@ export const CartDrawer: React.FC = () => {
                   <form onSubmit={handleApplyCoupon} className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Coupon code (NYX10, DRIP15)"
+                      placeholder="Enter coupon code"
                       value={couponInput}
                       onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                       className="flex-1 bg-[#0A0A0D] border border-[#2A2A32] px-3 py-1.5 text-xs text-[#F5F5F7] placeholder-[#9A9AA3]/60 focus:outline-none focus:border-[#8B5CF6]"
