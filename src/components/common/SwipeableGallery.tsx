@@ -19,6 +19,7 @@ interface SwipeableGalleryProps {
   badge?: string | null;
   selectedIndex: number;
   onSelectIndex: (index: number) => void;
+  fitEntireProduct?: boolean;
 }
 
 export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
@@ -27,6 +28,7 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
   badge,
   selectedIndex,
   onSelectIndex,
+  fitEntireProduct = false,
 }) => {
   const safeImages = images.length > 0 ? images : [PRODUCT_PLACEHOLDER_IMAGE];
   const totalSlides = safeImages.length;
@@ -131,7 +133,7 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
 
   const openLightbox = () => {
     setIsLightboxOpen(true);
-    setLightboxScale(1.5);
+    setLightboxScale(fitEntireProduct ? 1 : 1.5);
     setLightboxPan({ x: 0, y: 0 });
     setIsSlideshowActive(false);
   };
@@ -187,8 +189,8 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = PRODUCT_PLACEHOLDER_IMAGE;
                   }}
-                  className={`w-full h-full object-cover transition-transform duration-300 ${
-                    isSelected ? 'scale-105' : 'group-hover:scale-105'
+                  className={`w-full h-full ${fitEntireProduct ? 'object-contain p-1' : 'object-cover'} transition-transform duration-300 ${
+                    fitEntireProduct ? 'scale-100' : isSelected ? 'scale-105' : 'group-hover:scale-105'
                   }`}
                 />
                 {isSelected && isSlideshowActive && !isHovered && (
@@ -274,7 +276,7 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
           onTouchEnd={onTouchEnd}
           onMouseEnter={() => {
             setIsHovered(true);
-            setIsHoverZoomActive(true);
+            setIsHoverZoomActive(!fitEntireProduct);
           }}
           onMouseLeave={() => {
             setIsHovered(false);
@@ -305,12 +307,10 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = PRODUCT_PLACEHOLDER_IMAGE;
                     }}
-                    className={`w-full h-full object-cover object-center transition-all duration-700 ease-out ${
-                      // When hover zoom is active on current slide, scale up from cursor origin
-                      isCurrent && isHoverZoomActive
-                        ? 'scale-225'
-                        : isCurrent && isSlideshowActive
-                        ? 'scale-106 animate-pulse-subtle'
+                    className={`w-full h-full ${fitEntireProduct ? 'object-contain p-2 sm:p-4' : 'object-cover object-center'} transition-all duration-700 ease-out ${
+                      fitEntireProduct ? 'scale-100'
+                        : isCurrent && isHoverZoomActive ? 'scale-225'
+                        : isCurrent && isSlideshowActive ? 'scale-106 animate-pulse-subtle'
                         : 'scale-100 group-hover:scale-104'
                     }`}
                     style={{
@@ -551,7 +551,7 @@ export const SwipeableGallery: React.FC<SwipeableGalleryProps> = ({
                     src={img}
                     alt={`Thumb ${idx + 1}`}
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full ${fitEntireProduct ? 'object-contain p-1' : 'object-cover'}`}
                   />
                 </button>
               ))}
