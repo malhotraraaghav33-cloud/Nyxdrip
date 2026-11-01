@@ -11,6 +11,7 @@ import { validateCartStock } from '../../services/inventoryService';
 import { loadRazorpayScript } from '../../services/paymentService';
 import { fetchUserAddresses, saveUserAddress, UserAddress } from '../../services/addressService';
 import { AccountModal } from '../account/AccountModal';
+import { INDIA_STATES, INDIA_UNION_TERRITORIES } from '../../data/indiaRegions';
 import { buildWhatsAppOrderUrl } from '../../utils/whatsappOrder';
 
 // Razorpay Standard Checkout. Every charge and order is verified server-side.
@@ -498,16 +499,12 @@ export const CheckoutView: React.FC = () => {
                     onChange={(e) => handleInputChange('state', e.target.value)}
                     className="w-full bg-[#0A0A0D] border border-[#2A2A32] px-3.5 py-2.5 text-xs text-[#F5F5F7] focus:outline-none focus:border-[#8B5CF6]"
                   >
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Delhi">Delhi NCR</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Telangana">Telangana</option>
-                    <option value="West Bengal">West Bengal</option>
-                    <option value="Gujarat">Gujarat</option>
-                    <option value="Rajasthan">Rajasthan</option>
-                    <option value="Punjab">Punjab</option>
-                    <option value="Other">Other States</option>
+                    <optgroup label="States (28)">
+                      {INDIA_STATES.map((region) => <option key={region} value={region}>{region}</option>)}
+                    </optgroup>
+                    <optgroup label="Union Territories (8)">
+                      {INDIA_UNION_TERRITORIES.map((region) => <option key={region} value={region}>{region}</option>)}
+                    </optgroup>
                   </select>
                 </div>
 
