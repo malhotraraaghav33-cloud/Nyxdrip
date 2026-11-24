@@ -789,17 +789,17 @@ export const AdminDashboardView: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Payment Gateway Status & Revenue */}
+                {/* Verified Payment Records */}
                 <div className="p-5 bg-[#15151B] border border-[#2A2A32] relative overflow-hidden">
                   <div className="flex items-center justify-between text-[#9A9AA3]">
-                    <span className="text-[10px] uppercase font-semibold tracking-wider">Gateway Status</span>
-                    <DollarSign size={18} className="text-amber-400" />
+                    <span className="text-[10px] uppercase font-semibold tracking-wider">Verified Payments</span>
+                    <DollarSign size={18} className="text-emerald-400" />
                   </div>
-                  <p className="font-display text-sm sm:text-base font-bold text-amber-300 mt-2 uppercase tracking-wide">
-                    Payment Gateway Not Connected
+                  <p className="font-display text-sm sm:text-base font-bold text-emerald-300 mt-2 uppercase tracking-wide">
+                    {stats.verifiedCount > 0 ? 'Payment Records Found' : 'No Verified Payments Yet'}
                   </p>
                   <p className="text-[11px] text-[#9A9AA3] mt-1 font-mono-numbers">
-                    Razorpay integration scheduled for final phase
+                    {stats.verifiedCount} Razorpay-verified order{stats.verifiedCount === 1 ? '' : 's'} in the database
                   </p>
                 </div>
 
@@ -861,8 +861,8 @@ export const AdminDashboardView: React.FC = () => {
                         Monthly Sales Analytics
                       </h3>
                     </div>
-                    <span className="text-xs font-mono-numbers text-amber-400">
-                      Payment Gateway Not Connected
+                    <span className="text-xs font-mono-numbers text-emerald-400">
+                      Verified order revenue
                     </span>
                   </div>
 
