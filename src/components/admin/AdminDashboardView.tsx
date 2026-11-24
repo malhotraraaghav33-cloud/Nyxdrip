@@ -120,18 +120,49 @@ export const AdminDashboardView: React.FC = () => {
         setProducts(storeProducts);
       }
 
-      // 2. Fetch Orders with order_items
+      // 2. Fetch orders independently, then fetch line items separately.
+      // This prevents relationship-embedding errors from hiding paid transactions.
       const { data: ordersData, error: ordersErr } = await supabase
         .from('orders')
-        .select('*, order_items(*)')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (!ordersErr && ordersData) {
-        setOrders(ordersData);
-      } else {
-        console.error('Admin orders fetch failed:', ordersErr?.message);
+      if (ordersErr) {
+        console.error('Admin orders fetch failed:', ordersErr.message);
         setOrders([]);
-        showToast('Orders unavailable', ordersErr?.message || 'Could not load orders. Check admin database access.', 'error');
+        showToast('Orders unavailable', ordersErr.message || 'Could not load orders. Check admin database access.', 'error');
+      } else {
+        const orderIds = (ordersData || []).map((order: any) => order.id).filter(Boolean);
+        const itemsByOrder = new Map<string, any[]>();
+
+        if (orderIds.length > 0) {
+          const { data: itemRows, error: itemsErr } = await supabase
+            .from('order_items')
+            .select('*')
+            .in('order_id', orderIds);
+
+          if (itemsErr) {
+            console.error('Admin order items fetch failed:', itemsErr.message);
+            showToast('Order items unavailable', itemsErr.message, 'error');
+          } else {
+            (itemRows || []).forEach((item: any) => {
+              const current = itemsByOrder.get(item.order_id) || [];
+              current.push(item);
+              itemsByOrder.set(item.order_id, current);
+            });
+          }
+        }
+
+        const ordersWithItems = (ordersData || []).map((order: any) => ({
+          ...order,
+          order_items: itemsByOrder.get(order.id) || [],
+        }));
+        setOrders(ordersWithItems);
+        console.info('Admin orders loaded:', ordersWithItems.length,
+          'paid Razorpay orders:', ordersWithItems.filter((order: any) =>
+            String(order.payment_status || '').toLowerCase() === 'paid' &&
+            Boolean(order.provider_payment_id)
+          ).length);
       }
 
       // 3. Fetch Categories (if table exists, otherwise derive from products & defaults)
