@@ -128,6 +128,10 @@ export const AdminDashboardView: React.FC = () => {
 
       if (!ordersErr && ordersData) {
         setOrders(ordersData);
+      } else {
+        console.error('Admin orders fetch failed:', ordersErr?.message);
+        setOrders([]);
+        showToast('Orders unavailable', ordersErr?.message || 'Could not load orders. Check admin database access.', 'error');
       }
 
       // 3. Fetch Categories (if table exists, otherwise derive from products & defaults)
@@ -396,13 +400,14 @@ export const AdminDashboardView: React.FC = () => {
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ order_status: newStatus, updated_at: new Date().toISOString() })
+        .update({ order_status: newStatus.toLowerCase(), updated_at: new Date().toISOString() })
         .eq('id', orderId);
 
       if (error) throw error;
 
+      const normalizedStatus = newStatus.toLowerCase();
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, order_status: newStatus } : o))
+        prev.map((o) => (o.id === orderId ? { ...o, order_status: normalizedStatus } : o))
       );
       showToast('Status Updated', `Order marked as ${newStatus}.`, 'success');
     } catch (err: unknown) {
@@ -1433,15 +1438,16 @@ export const AdminDashboardView: React.FC = () => {
                           </td>
                           <td className="py-3.5 px-4">
                             <select
-                              value={ord.order_status || 'Processing'}
+                              value={(ord.order_status || 'processing').toLowerCase()}
                               onChange={(e) => handleQuickOrderStatus(ord.id, e.target.value)}
                               className="bg-[#0A0A0D] border border-[#2A2A32] focus:border-[#8B5CF6] text-xs text-white px-2 py-1 focus:outline-none"
                             >
-                              <option value="Processing">Processing</option>
-                              <option value="Paid">Paid</option>
-                              <option value="Shipped">Shipped</option>
-                              <option value="Delivered">Delivered</option>
-                              <option value="Cancelled">Cancelled</option>
+                              <option value="pending">Pending</option>
+                              <option value="confirmed">Confirmed</option>
+                              <option value="processing">Processing</option>
+                              <option value="shipped">Shipped</option>
+                              <option value="delivered">Delivered</option>
+                              <option value="cancelled">Cancelled</option>
                             </select>
                           </td>
                           <td className="py-3.5 px-4 text-right font-mono-numbers font-bold text-[#00D9FF]">
