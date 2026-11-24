@@ -32,21 +32,21 @@ export const ShopView: React.FC = () => {
     category: params.category || '',
     searchQuery: params.search || '',
     style: params.style || '',
+    newArrivalsOnly: Boolean(params.newArrivalsOnly),
   }));
 
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  // Sync navigation params if navigated from elsewhere
+  // Sync navigation params if navigated from elsewhere or via browser history
   useEffect(() => {
-    if (params.category !== undefined || params.search !== undefined || params.style !== undefined) {
-      setFilters((prev) => ({
-        ...prev,
-        category: params.category || '',
-        searchQuery: params.search || '',
-        style: params.style || '',
-      }));
-    }
+    setFilters((prev) => ({
+      ...prev,
+      category: params.category || '',
+      searchQuery: params.search || '',
+      style: params.style || '',
+      newArrivalsOnly: Boolean(params.newArrivalsOnly),
+    }));
   }, [params]);
 
   const handleFilterChange = <K extends keyof FilterState>(key: K, value: FilterState[K]) => {

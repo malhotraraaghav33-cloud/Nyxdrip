@@ -64,7 +64,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
     }
   }, [product?.id]);
 
-  const discountPercent = product.originalPrice
+  const discountPercent = product?.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
@@ -135,6 +135,24 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
   const toggleAccordion = (id: string) => {
     setActiveAccordion(activeAccordion === id ? null : id);
   };
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0D] text-[#F5F5F7] py-20 px-4">
+        <div className="max-w-md mx-auto text-center space-y-4">
+          <h2 className="font-display text-2xl font-bold uppercase text-[#F5F5F7]">Product Not Found</h2>
+          <p className="text-xs text-[#9A9AA3]">This piece could not be loaded right now.</p>
+          <button
+            type="button"
+            onClick={() => navigateTo('shop')}
+            className="px-6 py-2.5 bg-[#8B5CF6] hover:bg-[#7c4def] text-white text-xs font-bold uppercase tracking-wider transition-colors inline-block"
+          >
+            Explore Active Catalog
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isRingCategory) {
     return (
@@ -260,8 +278,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({ slug }) =>
                 </div>
 
                 <div className="text-right">
-                  <span className={`text-[11px] font-semibold ${product.stock <= 0 ? 'text-red-400' : product.stock <= 3 ? 'text-amber-300' : 'text-[#00D9FF]'}`}>
-                    {product.stock <= 0 ? 'Out of Stock' : product.stock <= 3 ? `Only ${product.stock} Left` : 'In Stock · Ready to Dispatch'}
+                  <span className={`text-[11px] font-semibold ${product.stock <= 0 ? 'text-red-400' : 'text-[#00D9FF]'}`}>
+                    {product.stock <= 0 ? 'Out of Stock' : 'In Stock'}
                   </span>
                 </div>
               </div>

@@ -5,7 +5,12 @@ interface BrandLoaderProps {
 }
 
 export const BrandLoader: React.FC<BrandLoaderProps> = ({ onComplete }) => {
-  const [fadeState, setFadeState] = useState<'entering' | 'holding' | 'leaving' | 'done'>('entering');
+  const [fadeState, setFadeState] = useState<'entering' | 'holding' | 'leaving' | 'done'>(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('nyxdrip_intro_shown')) {
+      return 'done';
+    }
+    return 'entering';
+  });
 
   useEffect(() => {
     // Check if session has already seen loader

@@ -13,6 +13,7 @@ import { SearchModal } from './components/modals/SearchModal';
 import { CustomCursor } from './components/common/CustomCursor';
 import { BrandLoader } from './components/common/BrandLoader';
 import { RouteTransition } from './components/common/RouteTransition';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 import { Hero } from './components/home/Hero';
 import { LaunchCountdown } from './components/home/LaunchCountdown';
@@ -52,32 +53,34 @@ const AppContent: React.FC = () => {
 
       {/* Main View Router with Smooth Fade Transition */}
       <main className="flex-1">
-        <RouteTransition currentView={currentView}>
-          {currentView === 'home' && (
-            <>
-              <Hero />
-              <LaunchCountdown />
-              <BrandStatement />
-              <FeaturedSection />
-              <CategorySection />
-              <NewDropSection />
-              <Newsletter />
-            </>
-          )}
+        <ErrorBoundary resetKey={currentView} onReset={() => window.location.assign('/')}>
+          <RouteTransition currentView={currentView}>
+            {currentView === 'home' && (
+              <>
+                <Hero />
+                <LaunchCountdown />
+                <BrandStatement />
+                <FeaturedSection />
+                <CategorySection />
+                <NewDropSection />
+                <Newsletter />
+              </>
+            )}
 
-          {currentView === 'shop' && <ShopView />}
-          {currentView === 'product' && <ProductDetailView />}
-          {currentView === 'cart' && <CartPage />}
-          {currentView === 'checkout' && <CheckoutView />}
-          {currentView === 'order-confirmation' && <OrderConfirmationView />}
-          {currentView === 'wishlist' && <WishlistView />}
-          {currentView === 'about' && <AboutView />}
-          {currentView === 'contact' && <ContactView />}
-          {currentView === 'account' && <AccountView />}
-          {currentView === 'verify' && <VerifyEmailView />}
-          {currentView === 'admin-login' && <AdminLoginView />}
-          {(currentView === 'admin-dashboard' || currentView === 'admin') && <AdminDashboardView />}
-        </RouteTransition>
+            {currentView === 'shop' && <ShopView />}
+            {currentView === 'product' && <ProductDetailView />}
+            {currentView === 'cart' && <CartPage />}
+            {currentView === 'checkout' && <CheckoutView />}
+            {currentView === 'order-confirmation' && <OrderConfirmationView />}
+            {currentView === 'wishlist' && <WishlistView />}
+            {currentView === 'about' && <AboutView />}
+            {currentView === 'contact' && <ContactView />}
+            {currentView === 'account' && <AccountView />}
+            {currentView === 'verify' && <VerifyEmailView />}
+            {currentView === 'admin-login' && <AdminLoginView />}
+            {(currentView === 'admin-dashboard' || currentView === 'admin') && <AdminDashboardView />}
+          </RouteTransition>
+        </ErrorBoundary>
       </main>
 
       {/* Footer - storefront only */}

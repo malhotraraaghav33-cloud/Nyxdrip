@@ -89,8 +89,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
         <div className="absolute top-2 left-2 z-20">
           {product.stock <= 0 ? (
             <span className="px-2 py-1 bg-red-950/90 border border-red-500/50 text-red-200 text-[10px] uppercase font-bold">Out of Stock</span>
-          ) : product.stock <= 3 ? (
-            <span className="px-2 py-1 bg-amber-950/90 border border-amber-500/50 text-amber-200 text-[10px] uppercase font-bold">Only {product.stock} Left</span>
           ) : (
             <span className="px-2 py-1 bg-[#05261e]/90 border border-emerald-500/40 text-emerald-300 text-[10px] uppercase font-bold">In Stock</span>
           )}

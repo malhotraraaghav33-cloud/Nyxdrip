@@ -32,10 +32,17 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
     const currentEl = elementRef.current;
     if (!currentEl) return;
 
+    const checkInViewport = () => {
+      const rect = currentEl.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 40 && rect.bottom > 0) {
+        setIsVisible(true);
+        return true;
+      }
+      return false;
+    };
+
     // Check if element is already inside the viewport upon mount
-    const rect = currentEl.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      setIsVisible(true);
+    if (checkInViewport()) {
       return;
     }
 
@@ -48,14 +55,20 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
       },
       {
         threshold,
-        rootMargin: '0px 0px -15px 0px',
+        rootMargin: '40px 0px 40px 0px',
       }
     );
 
     observer.observe(currentEl);
 
+    // Re-check after route transition scroll-to-top or browser back/bfcache restoration
+    const settleTimer = window.setTimeout(checkInViewport, 220);
+    window.addEventListener('pageshow', checkInViewport);
+
     return () => {
       observer.disconnect();
+      window.clearTimeout(settleTimer);
+      window.removeEventListener('pageshow', checkInViewport);
     };
   }, [threshold]);
 
