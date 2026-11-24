@@ -17,8 +17,12 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   onUpdated,
 }) => {
   const { showToast } = useToast();
-  const [selectedStatus, setSelectedStatus] = useState<string>(order?.order_status || 'Processing');
+  const [selectedStatus, setSelectedStatus] = useState<string>((order?.order_status || 'processing').toLowerCase());
   const [updating, setUpdating] = useState(false);
+
+  React.useEffect(() => {
+    setSelectedStatus((order?.order_status || 'processing').toLowerCase());
+  }, [order?.id, order?.order_status]);
 
   if (!isOpen || !order) return null;
 
@@ -36,7 +40,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       const { error } = await supabase
         .from('orders')
         .update({
-          order_status: selectedStatus,
+          order_status: selectedStatus.toLowerCase(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', order.id);
@@ -117,7 +121,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               <div className="flex items-center gap-2">
                 {getPaymentBadge(order.payment_status)}
                 <span className="text-[11px] text-[#9A9AA3] font-mono-numbers">
-                  Method: {order.payment_method?.toUpperCase() || 'UPI / CARD'}
+                  Method: {(order.payment_provider || 'razorpay').toUpperCase()}
                 </span>
               </div>
               <p className="text-[10px] text-[#9A9AA3]/70 mt-1 italic">
@@ -135,11 +139,12 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   onChange={(e) => setSelectedStatus(e.target.value)}
                   className="bg-[#15151B] border border-[#2A2A32] focus:border-[#8B5CF6] text-xs text-white px-3 py-1.5 focus:outline-none"
                 >
-                  <option value="Processing">Processing</option>
-                  <option value="Paid">Paid / Preparing</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="processing">Processing</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
                 </select>
                 <button
                   type="button"
@@ -149,6 +154,40 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 >
                   {updating ? 'Saving...' : 'Update'}
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Verified Razorpay transaction details */}
+          <div className="p-4 bg-[#0A0A0D] border border-[#2A2A32] space-y-3">
+            <p className="text-[10px] uppercase tracking-widest text-[#00D9FF] font-semibold flex items-center gap-1.5">
+              <CreditCard size={12} />
+              <span>Razorpay Payment Details</span>
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] text-[#9A9AA3] uppercase">Payment Status</p>
+                <p className="text-white font-semibold">{(order.payment_status || 'pending').toUpperCase()}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-[#9A9AA3] uppercase">Gateway</p>
+                <p className="text-white font-semibold">{(order.payment_provider || 'razorpay').toUpperCase()}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-[#9A9AA3] uppercase">Razorpay Payment ID</p>
+                <p className="text-[#C7CBD3] font-mono-numbers break-all">{order.provider_payment_id || 'Not recorded'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-[#9A9AA3] uppercase">Razorpay Order ID</p>
+                <p className="text-[#C7CBD3] font-mono-numbers break-all">{order.provider_order_id || 'Not recorded'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-[#9A9AA3] uppercase">Gateway Charged Amount</p>
+                <p className="text-white font-mono-numbers">{order.charged_amount != null ? `₹${Number(order.charged_amount).toLocaleString('en-IN')} ${order.charged_currency || 'INR'}` : 'Not recorded'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-[#9A9AA3] uppercase">Payment Verified At</p>
+                <p className="text-[#C7CBD3]">{order.paid_at ? new Date(order.paid_at).toLocaleString('en-IN') : 'Not recorded'}</p>
               </div>
             </div>
           </div>
@@ -177,11 +216,11 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 <span>Delivery Address</span>
               </p>
               <p className="text-[#C7CBD3] leading-relaxed">
-                {shippingAddr.streetAddress || shippingAddr.street_address || order.customer_address || 'Address on file'}
+                {shippingAddr.address || shippingAddr.streetAddress || shippingAddr.street_address || order.customer_address || 'Address on file'}
                 {shippingAddr.apartment ? `, ${shippingAddr.apartment}` : ''}
               </p>
               <p className="text-[#9A9AA3]">
-                {[shippingAddr.city, shippingAddr.state, shippingAddr.postalCode || shippingAddr.postal_code]
+                {[shippingAddr.city, shippingAddr.state, shippingAddr.pincode || shippingAddr.postalCode || shippingAddr.postal_code, shippingAddr.country]
                   .filter(Boolean)
                   .join(', ')}
               </p>
@@ -218,12 +257,12 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                             {item.product_image && (
                               <img
                                 src={item.product_image}
-                                alt={item.product_name}
+                                alt={item.product_name_snapshot || item.product_name || item.product_slug || 'Order item'}
                                 className="w-9 h-9 object-cover border border-[#2A2A32] shrink-0"
                               />
                             )}
                             <div>
-                              <p className="font-bold text-white text-xs">{item.product_name}</p>
+                              <p className="font-bold text-white text-xs">{item.product_name_snapshot || item.product_name || item.product_slug || 'Product'}</p>
                               <p className="text-[10px] text-[#9A9AA3] font-mono-numbers">{item.product_slug}</p>
                             </div>
                           </div>
@@ -265,7 +304,7 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
               <span>{Number(order.shipping) > 0 ? `₹${Number(order.shipping)}` : 'FREE'}</span>
             </div>
             <div className="pt-2 border-t border-[#2A2A32] flex justify-between w-full sm:w-64 text-sm font-bold text-white">
-              <span>Total Paid:</span>
+              <span>{(order.payment_status || '').toLowerCase() === 'paid' ? 'Total Paid:' : 'Order Total:'}</span>
               <span className="text-[#00D9FF]">₹{Number(order.total || 0).toLocaleString('en-IN')}</span>
             </div>
           </div>
