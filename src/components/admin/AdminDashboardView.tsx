@@ -1241,10 +1241,11 @@ export const AdminDashboardView: React.FC = () => {
                                     ? 'bg-amber-950/60 text-amber-300 border-amber-800'
                                     : 'bg-[#0A0A0D] text-white border-[#2A2A32] hover:border-[#8B5CF6]'
                                 }`}
-                                title="Click to adjust stock"
+                                title="Click to edit stock quantity"
                               >
                                 <span className="font-mono-numbers font-bold text-xs">{p.stock || 0}</span>
                                 <Edit2 size={10} className="text-[#9A9AA3]" />
+                                <span className="text-[9px] uppercase tracking-wide text-[#9A9AA3]">Edit Stock</span>
                               </div>
                             )}
                           </td>
@@ -1288,10 +1289,11 @@ export const AdminDashboardView: React.FC = () => {
                                   setEditingProduct(p);
                                   setIsProductModalOpen(true);
                                 }}
-                                className="p-1.5 bg-[#1B1B22] hover:bg-[#8B5CF6] text-[#C7CBD3] hover:text-white transition-colors"
-                                title="Edit Product Details & Images"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1B1B22] hover:bg-[#8B5CF6] text-[#C7CBD3] hover:text-white text-[10px] font-bold uppercase tracking-wide transition-colors whitespace-nowrap"
+                                title="Edit product name, price, stock, category and photos"
                               >
                                 <Edit2 size={13} />
+                                <span>Edit Product</span>
                               </button>
                               <button
                                 type="button"
