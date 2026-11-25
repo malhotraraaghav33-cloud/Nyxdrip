@@ -17,6 +17,27 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   if (!isOpen || !customer) return null;
 
   const orders = Array.isArray(customer.orders) ? customer.orders : [];
+  // Checkout address is stored on each order as a JSON snapshot. Prefer the
+  // latest order's saved delivery details so admins see the actual address used.
+  const latestAddressOrder = orders.find((order: any) =>
+    order.shipping_address && typeof order.shipping_address === 'object'
+  );
+  const shippingAddress = latestAddressOrder?.shipping_address || {};
+  const addressLine = [
+    shippingAddress.address,
+    shippingAddress.apartment,
+  ].filter(Boolean).join(', ');
+  const customerName = [
+    shippingAddress.firstName,
+    shippingAddress.lastName,
+  ].filter(Boolean).join(' ') || customer.name;
+  const customerPhone = shippingAddress.phone || customer.phone;
+  const customerEmail = shippingAddress.email || customer.email;
+  const cityStatePin = [
+    shippingAddress.city,
+    shippingAddress.state,
+    shippingAddress.pincode,
+  ].filter(Boolean).join(', ');
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
@@ -32,7 +53,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 OPERATIVE DOSSIER
               </span>
               <h2 className="font-display text-base sm:text-lg font-bold text-white">
-                {customer.name || customer.email?.split('@')[0]}
+                {customerName || customer.email?.split('@')[0]}
               </h2>
             </div>
           </div>
@@ -74,12 +95,12 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             <p className="text-[10px] uppercase tracking-wider text-[#9A9AA3] font-semibold">Contact Records</p>
             <p className="text-[#F5F5F7] flex items-center gap-2">
               <Mail size={13} className="text-[#9A9AA3]" />
-              <a href={`mailto:${customer.email}`} className="hover:underline">{customer.email}</a>
+              <a href={`mailto:${customer.email}`} className="hover:underline">{customerEmail}</a>
             </p>
-            {customer.phone && (
+            {customerPhone && (
               <p className="text-[#F5F5F7] flex items-center gap-2 font-mono-numbers">
                 <Phone size={13} className="text-[#9A9AA3]" />
-                <a href={`tel:${customer.phone}`} className="hover:underline">{customer.phone}</a>
+                <a href={`tel:${customerPhone}`} className="hover:underline">{customerPhone}</a>
               </p>
             )}
             {customer.createdAt && (
@@ -88,6 +109,24 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 <span>Registered: {new Date(customer.createdAt).toLocaleDateString('en-IN')}</span>
               </p>
             )}
+          </div>
+
+          {/* Original checkout delivery address */}
+          <div className="p-4 bg-[#0A0A0D] border border-[#2A2A32] space-y-3">
+            <p className="text-[10px] uppercase tracking-wider text-[#9A9AA3] font-semibold">Saved Delivery Address</p>
+            {addressLine || cityStatePin ? (
+              <div className="space-y-1 text-[#F5F5F7]">
+                {customerName && <p className="font-semibold">{customerName}</p>}
+                {addressLine && <p>{addressLine}</p>}
+                {cityStatePin && <p>{cityStatePin}</p>}
+                {shippingAddress.country && <p>{shippingAddress.country}</p>}
+                {customerPhone && <p className="text-[#C7CBD3]">Phone: {customerPhone}</p>}
+                {customerEmail && <p className="text-[#C7CBD3]">Email: {customerEmail}</p>}
+              </div>
+            ) : (
+              <p className="text-[#9A9AA3]">No saved checkout address is available for this customer yet.</p>
+            )}
+            <p className="text-[10px] text-[#777782]">Address shown from the customer's latest order checkout record.</p>
           </div>
 
           {/* Past Orders */}
