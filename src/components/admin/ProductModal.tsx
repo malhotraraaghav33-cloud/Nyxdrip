@@ -167,10 +167,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         original_price: origPriceNum,
         category: categoryName,
         style: style.trim() || null,
+        materials: materials.trim() || null,
+        colors: colorsArray.length > 0 ? colorsArray : ['Silver'],
         stock: stockNum,
+        badge: badge || null,
         images,
         is_active: isActive,
         is_new_arrival: isNewArrival,
+        is_best_seller: isBestSeller,
         updated_at: new Date().toISOString(),
       };
 
