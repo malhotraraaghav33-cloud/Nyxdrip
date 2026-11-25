@@ -157,22 +157,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
     setSaving(true);
     try {
-      const payload: any = {
+      // Match the real public.products schema exactly. Unsupported UI-only
+      // fields must never be sent to PostgREST or the entire save will fail.
+      const payload = {
         name: name.trim(),
         slug: cleanSlug,
         description: description.trim(),
         price: priceNum,
         original_price: origPriceNum,
-        category_name: categoryName,
-        style: style.trim() || 'Gothic',
-        materials: materials.trim() || '316L Surgical Stainless Steel',
-        colors: colorsArray.length > 0 ? colorsArray : ['Silver'],
+        category: categoryName,
+        style: style.trim() || null,
         stock: stockNum,
-        badge: badge ? badge : null,
-        images: images,
+        images,
         is_active: isActive,
         is_new_arrival: isNewArrival,
-        is_best_seller: isBestSeller,
         updated_at: new Date().toISOString(),
       };
 
@@ -186,17 +184,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         if (updateError) throw updateError;
 
         // Upsert inventory
-        try {
-          await supabase
-            .from('inventory')
-            .upsert({
-              product_id: product.id,
-              quantity: stockNum,
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'product_id' });
-        } catch {
-          // Inventory safeguard
-        }
+        const { error: inventoryError } = await supabase
+          .from('inventory')
+          .upsert({
+            product_id: product.id,
+            quantity: stockNum,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'product_id' });
+        if (inventoryError) console.warn('Product saved; inventory mirror update failed:', inventoryError.message);
 
         showToast('Product Updated', `${name} changes have been applied.`, 'success');
       } else {
@@ -211,16 +206,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         // Insert inventory
         if (newProd?.id) {
-          try {
-            await supabase
-              .from('inventory')
-              .insert({
-                product_id: newProd.id,
-                quantity: stockNum,
-              });
-          } catch {
-            // Inventory safeguard
-          }
+          const { error: inventoryError } = await supabase
+            .from('inventory')
+            .upsert({
+              product_id: newProd.id,
+              quantity: stockNum,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'product_id' });
+          if (inventoryError) console.warn('Product saved; inventory mirror insert failed:', inventoryError.message);
         }
 
         showToast('Product Added', `${name} is now in the database.`, 'success');
