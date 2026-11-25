@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, Trash2, Plus, AlertCircle, Image as ImageIcon, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { uploadProductImage } from '../../lib/storage';
@@ -31,8 +31,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [slug, setSlug] = useState(product?.slug || '');
   const [description, setDescription] = useState(product?.description || '');
   const [price, setPrice] = useState<string>(product?.price ? String(product.price) : '');
-  const [originalPrice, setOriginalPrice] = useState<string>(product?.originalPrice ? String(product.originalPrice) : '');
-  const [categoryName, setCategoryName] = useState(product?.category || categories[0]?.name || 'Pendants');
+  const [originalPrice, setOriginalPrice] = useState<string>(product?.original_price != null ? String(product.original_price) : (product?.originalPrice != null ? String(product.originalPrice) : ''));
+  const [categoryName, setCategoryName] = useState(product?.category_name || product?.category || categories[0]?.name || 'Pendants');
   const [style, setStyle] = useState(product?.style || 'Gothic');
   const [materials, setMaterials] = useState(product?.materials || '316L Surgical Stainless Steel');
   const [colors, setColors] = useState(Array.isArray(product?.colors) ? product.colors.join(', ') : (product?.color || 'Silver'));
@@ -47,6 +47,34 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Reinitialize the form every time a different product is opened.
+  // The database stores original_price/category_name, while some UI paths use camelCase.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setName(product?.name || '');
+    setSlug(product?.slug || '');
+    setDescription(product?.description || '');
+    setPrice(product?.price != null ? String(product.price) : '');
+    setOriginalPrice(
+      product?.original_price != null
+        ? String(product.original_price)
+        : (product?.originalPrice != null ? String(product.originalPrice) : '')
+    );
+    setCategoryName(product?.category_name || product?.category || categories[0]?.name || 'Pendants');
+    setStyle(product?.style || 'Gothic');
+    setMaterials(product?.materials || '316L Surgical Stainless Steel');
+    setColors(Array.isArray(product?.colors) ? product.colors.join(', ') : (product?.color || 'Silver'));
+    setStock(product?.stock != null ? String(product.stock) : '20');
+    setBadge(product?.badge || '');
+    setIsActive(product?.is_active !== undefined ? product.is_active : true);
+    setIsNewArrival(Boolean(product?.is_new_arrival || product?.isNewArrival));
+    setIsBestSeller(Boolean(product?.is_best_seller || product?.isBestSeller));
+    setImages(Array.isArray(product?.images) ? product.images : []);
+    setUploadError(null);
+    setSaving(false);
+  }, [isOpen, product?.id]);
 
   if (!isOpen) return null;
 
@@ -107,6 +135,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     e.preventDefault();
     if (!name.trim()) {
       showToast('Error', 'Product name is required.', 'error');
+      return;
+    }
+    if (images.length === 0) {
+      showToast('Product Photo Required', 'Please upload at least one product image before saving.', 'error');
       return;
     }
     const cleanSlug = slug.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
